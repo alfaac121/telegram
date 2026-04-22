@@ -1,0 +1,1 @@
+const express = require('express'); const router = express.Router(); const ctrl = require('../controllers/botController'); router.post('/usuarios', ctrl.saveUser); router.post('/reportes', ctrl.saveReporte); router.get('/reportes/:id', ctrl.getTicket); router.get('/usuarios/:telegram_id/reportes', ctrl.getUltimosTickets); module.exports = router;
