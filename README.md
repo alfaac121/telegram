@@ -44,7 +44,7 @@ npm start
 
 ---
 
-## 🛠️ Código Explicado (Snippets Clave)
+## 🛠️ Código
 
 ### 1. Manejo de Reportes en el Bot
 El bot utiliza un sistema de "Pasos" para guiar al usuario. Cuando el usuario escribe `/reportar`, el código activa una máquina de estados:
@@ -82,6 +82,60 @@ if (!token) return res.status(403).send({ message: "No token provided" });
 // Verificación del token con secreto...
 ```
 
+### 4. Integración API en React (Frontend)
+El frontend utiliza `fetch` para comunicarse con el backend, enviando el token JWT en las cabeceras para validar la sesión:
+
+```javascript
+// Fragmento de frontend/src/App.jsx
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    fetch('http://localhost:3000/api/auth/me', { 
+      headers: { 'Authorization': `Bearer ${token}` } 
+    })
+    .then(r => r.ok ? r.json() : Promise.reject('Inválido'))
+    .then(data => setUser({ ...data.user, permisos: data.permisos }))
+    .catch(() => localStorage.removeItem('token'));
+  }
+}, []);
+```
+*Explicación:* Al cargar la app, verificamos si existe un token. Si es así, pedimos al servidor los datos del usuario y sus permisos de acceso a módulos específicos.
+
+### 5. Manejo de Imágenes de Evidencia en el Bot
+Cuando un usuario envía una foto, el bot extrae el ID del archivo de mayor resolución para guardarlo en la base de datos:
+
+```javascript
+// Fragmento de src/bot/telegramBot.js
+const foto = msg.photo ? msg.photo[msg.photo.length - 1].file_id : null;
+
+if (estado.paso === 'esperando_imagen') {
+    if (foto) estado.imagen = foto;
+    else if (texto.toLowerCase() === 'omitir') estado.imagen = null;
+    
+    estado.paso = 'confirmando';
+    return enviarConfirmacion(chatId, estado);
+}
+```
+*Explicación:* Telegram envía las fotos en diferentes tamaños. Accedemos al último elemento del array `msg.photo` para asegurarnos de tener la mejor calidad disponible.
+
+### 6. Rutas Protegidas en el Panel (Frontend)
+Usamos un componente de "Protección" para evitar que usuarios no autenticados entren a las vistas administrativas:
+
+```javascript
+// Fragmento de frontend/src/App.jsx
+const ProtectedRoute = ({ children, user }) => {
+  if (!user) return <Navigate to="/login" replace />;
+  return (
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      <Sidebar user={user} />
+      <div className="flex-1 p-8 overflow-auto">
+        {children}
+      </div>
+    </div>
+  );
+};
+```
+
 ---
 
 ## ⭐ Funcionalidades Destacadas
@@ -89,16 +143,18 @@ if (!token) return res.status(403).send({ message: "No token provided" });
 1.  **Evidencia con Fotos**: Los usuarios pueden enviar fotos de la falla. El bot captura el `file_id` y lo asocia al ticket para que el administrador lo vea en el panel.
 2.  **Seguridad por ID**: Solo el usuario que creó el ticket puede consultar su estado mediante `/estado`.
 3.  **Roles Administrativos**:
-    - **Admin**: Control total.
-    - **Técnico**: Gestiona sus tareas asignadas.
-    - **Supervisor**: Vista de solo lectura para auditoría.
+    - **Admin**: Control total y gestión de usuarios.
+    - **Técnico**: Gestiona sus tareas asignadas y cambia estados.
+    - **Supervisor**: Vista de solo lectura para auditoría y métricas.
 
 ---
 
-## 🚀 Notas Técnicas
-En caso de reiniciar la base de datos, el sistema creará automáticamente la cuenta de administrador maestra si ejecutas el servidor por primera vez:
-- **Email:** `admin@admin.com`
-- **Password:** `123456`
+## 🚀 Notas Técnicas y Seguridad
+- **JWT**: Las sesiones expiran y requieren un secreto configurado en `src/config/env.js`.
+- **Bcrypt**: Las contraseñas nunca se guardan en texto plano; se cifran con un hash de costo 10.
+- **Admin Maestro**: En caso de inicializar de cero, usa:
+  - **Email:** `admin@admin.com`
+  - **Password:** `123456`
 
 ---
-*Desarrollado para el soporte técnico inteligente vía Telegram.*
+*Desarrollado para la estabilidad empresarial y soporte técnico inteligente.*
