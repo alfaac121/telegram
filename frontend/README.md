@@ -24,44 +24,65 @@ npm install
 ```
 
 ### 2. Configuración de API
-Por defecto, el frontend busca el servidor en `http://localhost:3000`. Si cambias el puerto del backend, debes actualizar las URLs en:
-- `src/App.jsx`
-- `src/pages/Login.jsx`
-- `src/pages/TicketTable.jsx`
+Por defecto, el frontend busca el servidor en `http://localhost:3000`. Si cambias el puerto del backend, debes actualizar esta línea en los archivos mencionados:
+
+```javascript
+// Ejemplo de configuración en Login.jsx y App.jsx
+const API_BASE_URL = 'http://localhost:3000/api';
+
+// Uso en una petición:
+const res = await fetch(`${API_BASE_URL}/auth/login`, { ... });
+```
+
+**Archivos a editar si el puerto cambia:**
+- `src/App.jsx` (Línea 29)
+- `src/pages/Login.jsx` (Línea 15 y 26)
+- `src/pages/TicketTable.jsx` (En las funciones de carga y actualización)
 
 ### 3. Comandos de Terminal
 | Comando | Descripción |
 | :--- | :--- |
 | `npm run dev` | Inicia el servidor de desarrollo (hace cambios en vivo). |
-| `npm run build` | Genera la carpeta `dist/` lista para subir a producción (Vercel, Netlify). |
-| `npm run preview` | Previsualiza la versión de producción localmente. |
+| `npm run build` | Genera la carpeta `dist/` para producción. |
 
 ---
 
 ## 📂 Organización del Código
 
-- **`src/components/`**: Elementos reutilizables como el `Sidebar` (barra lateral) y módulos externos.
-- **`src/pages/`**: Vistas principales de la aplicación:
-  - `Login.jsx`: Control de acceso con JWT.
-  - `Dashboard.jsx`: Resumen visual con tarjetas de estado y gráficos.
-  - `TicketTable.jsx`: Tabla interactiva para asignar técnicos y cambiar estados.
-- **`src/assets/`**: Imágenes y recursos estáticos.
+- **`src/components/`**: Como el `Sidebar.jsx`, que gestiona los enlaces según los permisos del usuario logueado.
+- **`src/pages/`**: 
+  - `Login.jsx`: Gestiona la entrada.
+  - `Dashboard.jsx`: Muestra estadísticas usando `Recharts`.
+  - `TicketTable.jsx`: Lógica de gestión de tickets:
+  ```javascript
+  // Ejemplo de cómo se cargan los tickets
+  const fetchTickets = async () => {
+    const res = await fetch('http://localhost:3000/api/reportes', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+  };
+  ```
 
 ---
 
 ## 🔐 Seguridad y Autenticación
-El panel utiliza **JSON Web Tokens (JWT)**:
-1. El usuario se loguea y el servidor devuelve un token.
-2. El token se guarda en el `localStorage` del navegador.
-3. El frontend envía este token en el Header `Authorization` en cada petición API.
-4. Si el token es inválido o expira, la app redirige automáticamente al `/login`.
+El panel guarda el token para persistir la sesión:
+
+```javascript
+// Fragmento de Login.jsx
+if (res.ok) {
+  localStorage.setItem('token', data.token); // Guarda el token en el PC
+  setUser(data.user); // Actualiza el estado global
+  navigate('/'); // Manda al usuario al inicio
+}
+```
+Si quieres borrar la sesión manualmente, puedes usar `localStorage.removeItem('token')` o simplemente cerrar la pestaña (aunque el token persistirá hasta que el servidor lo invalide o el usuario cierre sesión).
 
 ---
 
 ## 🎨 Diseño y UX
-- **Flat UI:** Interfaz limpia con sombras sutiles y bordes redondeados.
-- **Responsive:** Adaptado para tablets y pantallas de escritorio.
-- **Micro-interacciones:** Efectos hover en botones y transiciones de carga suaves.
+- **Phosphor Icons:** Se usan para el menú visual.
+- **GSAP:** Añadido para animaciones de entrada en el Dashboard.
 
 ---
 *Parte del ecosistema Soporte Bot — Gestiona con eficiencia.*
