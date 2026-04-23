@@ -1,38 +1,104 @@
-# Telegram Soporte Bot & Panel Administrativo
+# 🤖 Telegram Support Bot & Admin Panel
 
-Este documento contiene un resumen en vivo de toda la arquitectura y cambios implementados hasta el día de hoy, para asegurar la continuidad perfecta del proyecto en futuras sesiones.
-
-## 🛠️ Tecnologías Establecidas
-- **Backend:** Node.js, Express.js.
-- **Base de Datos:** MySQL (mysql2 driver local a `127.0.0.1`).
-- **Seguridad:** JWT (Json Web Tokens) para las sesiones y BcryptJS para el cifrado de contraseñas.
-- **Bot:** Telegram Bot API (node-telegram-bot-api).
-
-## ⭐ Funcionalidades Completadas Hoy
-
-**1. Interfaz del Bot de Telegram (`bot.js`)**
-- **Atajos Nativos:** Añadimos funcionalidad en el botón lateral del teclado (`/start`, `/reportar`, `/estado`) para agilizar flujos.
-- **Evidencia con Fotos:** El bot comprende la llegada de imágenes enviadas por el usuario, detectando el ID directo del archivo de alta resolución de Telegram sin que caiga el sistema, guardándolo asociado a su ticket.
-- **Seguridad de Consultas:** Al pedir el `/estado`, el bot cruza el ID del telegram del usuario con la Base de datos para evitar que los reportes ajenos sean robados.
-
-**2. Base de datos MySQL (`setup.sql` & Esquema)**
-- **Tabla `usuarios`:** Para el histórico publico de clientes de Telegram y guardado dinámico (UPSERT)
-- **Tabla `reportes`:** Modificada mediante comandos ALTER para añadir la validación de `tecnico` y su carga multimedia `imagen`. 
-- **Tabla `panel_usuarios`:** Creada para desacoplar a los empleados del sistema frente a los clientes externos.
-
-**3. Panel Web Interactivo (UI & Autenticación)**
-- **Dashboard Flat Design:** Estético dashboard programado en HTML Vanilla y JS del lado de cliente (`index.html` & `app.js`).
-- **Seguridad LogIn:** Implementación de JWT. Redirige a los no autorizados a `/login.html` denegando Fetch APIs sin el Bearer Token.
-- **Ruta de Proxy para Fotos:** Desarrollamos un *bypass* (`GET /api/reportes/:id/imagen`) que impide la caducidad global y fuerza las imágenes (`inline content-disposition`) sin obligar a descargar el archivo al PC.
-
-**4. Reglas de Negocio Multiusuario (RBAC)**
-- **Admin**: Acceso incondicional, ve la vista completa.
-- **Técnico**: Ve su lista asignada, se inhabilitan cajas de asignar nuevo técnico, pero mantiene capacidades de modificar estados a ticket Resueltos.
-- **Supervisor**: Ingresa, puede ver imágenes, métricas... pero nada es editable (Vista Control de Lectura).
+Bienvenido al repositorio del **Bot de Soporte Técnico para Telegram**. Este sistema permite gestionar reportes de fallas de usuarios finales a través de Telegram y administrarlos mediante un panel web profesional.
 
 ---
-## 🚀 Notas para la próxima sesión
-- **Inicializador:** En caso de purga de Base de Datos, con solo levantar `node index.js`, el aplicativo incrustará sin preguntar la cuenta matriz `admin@admin.com / 123456`.
-- Todo el entorno ha quedado validado con cero errores a nivel conexión. 
-- *Proceso listado para continuar mañana.*
-# bot_telegram
+
+## 🚀 Guía Rápida de Instalación
+
+### 1. Requisitos Previos
+- **Node.js** (v18 o superior)
+- **MySQL** (XAMPP o servidor local)
+- **Un Bot de Telegram** (Creado mediante [@BotFather](https://t.me/botfather))
+
+### 2. Instalación de Dependencias
+Ejecuta en la carpeta raíz:
+```bash
+npm install express cors node-telegram-bot-api mysql2 jsonwebtoken bcryptjs node-fetch@2
+```
+
+### 3. Configuración de Base de Datos
+Importa el contenido de el archivo `setup.sql` en tu servidor MySQL. Esto creará la base de datos `telegram_bot` y las tablas necesarias (`reportes`, `usuarios`, `clientes_telegram`).
+
+### 4. Configuración del Bot
+Edita el archivo `server.js` y coloca tu Token de Telegram:
+```javascript
+const TOKEN = 'TU_TOKEN_DE_TELEGRAM_AQUI';
+const bot = new TelegramBot(TOKEN, { polling: true });
+```
+
+### 5. Iniciar el Sistema
+```bash
+npm start
+```
+
+---
+
+## 📂 Estructura del Proyecto Explicada
+
+- **`server.js`**: El corazón del sistema. Inicia el servidor Express y el Bot de Telegram simultáneamente.
+- **`src/bot/telegramBot.js`**: Aquí reside toda la lógica de conversación del bot.
+- **`src/config/db.js`**: Configuración de la conexión a MySQL (Host, Usuario, Password).
+- **`src/routes/`**: Define los puntos de acceso (endpoints) para el panel web (Reportes, Auth, Usuarios).
+- **`frontend/`**: Contiene la interfaz administrativa (HTML/JS) que consume la API del servidor.
+
+---
+
+## 🛠️ Código Explicado (Snippets Clave)
+
+### 1. Manejo de Reportes en el Bot
+El bot utiliza un sistema de "Pasos" para guiar al usuario. Cuando el usuario escribe `/reportar`, el código activa una máquina de estados:
+
+```javascript
+// Fragmento de src/bot/telegramBot.js
+if (estado.paso === 'esperando_punto') {
+    estado.punto = texto; 
+    estado.paso = 'esperando_falla';
+    return bot.sendMessage(chatId, 'Describe la falla');
+}
+```
+*Explicación:* Guardamos temporalmente lo que dice el usuario (`estado.punto`) y cambiamos al siguiente paso (`esperando_falla`) hasta completar el ticket.
+
+### 2. Conexión a la Base de Datos
+Utilizamos `mysql2` con soporte de Promesas para facilitar la lectura/escritura asíncrona:
+
+```javascript
+// Fragmento de src/config/db.js
+const conexion = mysql.createConnection({
+  host: '127.0.0.1',
+  user: 'root',
+  password: '', // Cambiar según tu configuración
+  database: 'telegram_bot'
+});
+```
+
+### 3. Middleware de Seguridad (JWT)
+Para proteger el panel administrativo, verificamos que cada petición tenga un Token válido:
+
+```javascript
+// Fragmento de src/middlewares/authMiddleware.js
+const token = req.headers['authorization'];
+if (!token) return res.status(403).send({ message: "No token provided" });
+// Verificación del token con secreto...
+```
+
+---
+
+## ⭐ Funcionalidades Destacadas
+
+1.  **Evidencia con Fotos**: Los usuarios pueden enviar fotos de la falla. El bot captura el `file_id` y lo asocia al ticket para que el administrador lo vea en el panel.
+2.  **Seguridad por ID**: Solo el usuario que creó el ticket puede consultar su estado mediante `/estado`.
+3.  **Roles Administrativos**:
+    - **Admin**: Control total.
+    - **Técnico**: Gestiona sus tareas asignadas.
+    - **Supervisor**: Vista de solo lectura para auditoría.
+
+---
+
+## 🚀 Notas Técnicas
+En caso de reiniciar la base de datos, el sistema creará automáticamente la cuenta de administrador maestra si ejecutas el servidor por primera vez:
+- **Email:** `admin@admin.com`
+- **Password:** `123456`
+
+---
+*Desarrollado para el soporte técnico inteligente vía Telegram.*
