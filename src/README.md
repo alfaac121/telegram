@@ -55,4 +55,4 @@ Si quieres añadir una nueva opción al bot o al panel:
 5. (Opcional) Agrega el comando en `src/bot/telegramBot.js`.
 
 ---
-*Arquitectura Backend — Robusta y Escalable.*
+*Arquitectura Backend*
