@@ -136,6 +136,72 @@ const ProtectedRoute = ({ children, user }) => {
 };
 ```
 
+### 7. Control de Acceso por Roles (RBAC) en Backend
+La lógica de negocio asegura que los Técnicos solo vean sus tickets asignados mientras que los Admins ven todo:
+
+```javascript
+// Fragmento de src/services/reportesService.js
+exports.obtenerTodos = async (rol, username) => {
+  if (rol === 'tecnico') {
+    // El técnico solo consulta sus propios tickets
+    const [rows] = await db.query('SELECT * FROM reportes WHERE tecnico = ? ORDER BY fecha DESC', [username]);
+    return rows;
+  }
+  // Los demás (Admin/Supervisor) ven la lista global
+  const [rows] = await db.query('SELECT * FROM reportes ORDER BY fecha DESC');
+  return rows;
+};
+```
+
+---
+
+## 🛠️ Guía Paso a Paso (Tutorial de Configuración)
+
+Sigue estos pasos según tu situación actual:
+
+### Escenario A: Si estás instalando desde CERO (Primera vez)
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/alfaac121/telegram-bot.git
+   cd telegram-bot
+   ```
+2. **Instalar Backend:**
+   ```bash
+   npm install
+   ```
+3. **Instalar Frontend (Opcional si vas a compilar):**
+   ```bash
+   cd frontend && npm install && cd ..
+   ```
+4. **Configurar Base de Datos:**
+   - Abre XAMPP o MySQL.
+   - Ejecuta los comandos en `setup.sql` para crear las tablas.
+5. **Configurar el Bot:**
+   - Edita `server.js` y coloca tu Token.
+6. **Lanzar:**
+   ```bash
+   npm start
+   ```
+
+### Escenario B: Si ya tienes el código y quieres ACTUALIZARLO
+1. **Bajar cambios de GitHub:**
+   ```bash
+   git pull origin main
+   ```
+2. **Reiniciar el servidor:**
+   - Presiona `CTRL + C` en la terminal.
+   - Escribe `npm start`.
+
+### Escenario C: Si necesitas REINICIAR los datos (Limpiar todo)
+1. **Entrar a MySQL y borrar base de datos:**
+   ```sql
+   DROP DATABASE telegram_bot;
+   ```
+2. **Recargar el script de tablas:**
+   - Ejecuta de nuevo `setup.sql`.
+3. **Iniciar servidor:**
+   - El sistema creará automáticamente el usuario `admin@admin.com` al detectar que la tabla de usuarios está vacía.
+
 ---
 
 ## ⭐ Funcionalidades Destacadas
@@ -157,4 +223,4 @@ const ProtectedRoute = ({ children, user }) => {
   - **Password:** `123456`
 
 ---
-*Desarrollado para la estabilidad empresarial y soporte técnico inteligente.*
+*Documentación avanzada para la estabilidad empresarial y gestión de soporte.*
