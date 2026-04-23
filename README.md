@@ -162,12 +162,46 @@ Sigue estos pasos según tu situación actual:
 
 ---
 
-## 🚀 Notas Técnicas y Seguridad
-- **JWT**: Las sesiones expiran y requieren un secreto configurado en `src/config/env.js`.
-- **Bcrypt**: Las contraseñas nunca se guardan en texto plano; se cifran con un hash de costo 10.
-- **Admin Maestro**: En caso de inicializar de cero, usa:
-  - **Email:** `admin@admin.com`
-  - **Password:** `123456`
+## 🛠️ Solución de Problemas Comunes (Troubleshooting)
+
+### 1. Error `ECONNREFUSED 3306` (Base de datos apagada)
+Si el bot no arranca porque no encuentra la base de datos:
+```bash
+# Iniciar MySQL en Linux
+sudo service mysql start
+# Verificar estado
+sudo service mysql status
+```
+
+### 2. Error `Unknown database 'telegram_bot'`
+Si la base de datos no existe, créala e importa las tablas así:
+```bash
+sudo mysql < setup.sql
+```
+
+### 3. Olvido de contraseña o "Usuario no encontrado"
+Si no puedes entrar al panel web con `admin@admin.com / 123456`, ejecuta este comando en la raíz para resetear el acceso:
+```bash
+cat <<EOF > fix_admin.js
+const db = require('./src/config/db').promise;
+const bcrypt = require('bcryptjs');
+async function fix() {
+  const hash = await bcrypt.hash('123456', 10);
+  await db.query('DELETE FROM usuarios WHERE email = "admin@admin.com"');
+  const [res] = await db.query('INSERT INTO usuarios (username, email, password, rol) VALUES (?, ?, ?, ?)', ['admin', 'admin@admin.com', hash, 'admin']);
+  await db.query('INSERT IGNORE INTO permisos (id_usuario, id_modulo) SELECT ?, id FROM modulos', [res.insertId]);
+  console.log('✅ Usuario Admin configurado con éxito');
+  process.exit(0);
+}
+fix();
+EOF
+node fix_admin.js
+```
+
+### 4. Navegación rápida por terminal
+- **Entrar al Panel Web:** `cd frontend`
+- **Volver a la carpeta principal:** `cd ..`
+- **Ver archivos en la carpeta:** `ls`
 
 ---
 *Documentación avanzada para la estabilidad empresarial y gestión de soporte.*
