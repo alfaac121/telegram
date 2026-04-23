@@ -162,7 +162,7 @@ Sigue estos pasos según tu situación actual:
 
 ---
 
-## 🛠️ Solución de Problemas Comunes (Troubleshooting)
+## 🛠️ Solución de Problemas Comunes
 
 ### 1. Error `ECONNREFUSED 3306` (Base de datos apagada)
 Si el bot no arranca porque no encuentra la base de datos:

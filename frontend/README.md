@@ -40,9 +40,9 @@ const res = await fetch(`${API_BASE_URL}/auth/login`, { ... });
 - `src/pages/TicketTable.jsx` (En las funciones de carga y actualización)
 
 ### 3. Comandos de Terminal
-| Comando | Descripción |
-| :--- | :--- |
-| `npm run dev` | Inicia el servidor de desarrollo (hace cambios en vivo). |
+| Comando         | Descripción |
+| :---            |   ---       |
+| `npm run dev`   | Inicia el servidor de desarrollo (hace cambios en vivo). |
 | `npm run build` | Genera la carpeta `dist/` para producción. |
 
 ---
