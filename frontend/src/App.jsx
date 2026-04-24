@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import API_URL from './api';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
@@ -26,7 +27,7 @@ export default function App() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      fetch('http://localhost:3000/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } })
+      fetch(`${API_URL}/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.ok ? r.json() : Promise.reject('Inválido'))
       .then(data => setUser({ ...data.user, permisos: data.permisos }))
       .catch(() => localStorage.removeItem('token'))

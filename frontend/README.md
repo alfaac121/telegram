@@ -24,20 +24,14 @@ npm install
 ```
 
 ### 2. Configuración de API
-Por defecto, el frontend busca el servidor en `http://localhost:3000`. Si cambias el puerto del backend, debes actualizar esta línea en los archivos mencionados:
+Para facilitar el despliegue, la URL de la API está centralizada en un solo archivo. Si cambias el puerto del backend o subes el sistema a un servidor real, solo debes editar este archivo:
 
+**Archivo:** `src/api.js`
 ```javascript
-// Ejemplo de configuración en Login.jsx y App.jsx
-const API_BASE_URL = 'http://localhost:3000/api';
-
-// Uso en una petición:
-const res = await fetch(`${API_BASE_URL}/auth/login`, { ... });
+const API_URL = 'http://localhost:3000/api';
 ```
 
-**Archivos a editar si el puerto cambia:**
-- `src/App.jsx` (Línea 29)
-- `src/pages/Login.jsx` (Línea 15 y 26)
-- `src/pages/TicketTable.jsx` (En las funciones de carga y actualización)
+Ya no es necesario buscar y reemplazar la URL en múltiples archivos; el sistema la tomará automáticamente de aquí.
 
 ### 3. Comandos de Terminal
 | Comando         | Descripción |

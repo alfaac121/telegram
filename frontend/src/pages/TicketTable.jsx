@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import API_URL from '../api';
 
 export default function TicketTable({ user }) {
   const [reportes, setReportes] = useState([]);
@@ -8,7 +9,7 @@ export default function TicketTable({ user }) {
 
   const fetchTickets = () => {
     setCargando(true);
-    fetch('http://localhost:3000/api/reportes', { headers: { 'Authorization': `Bearer ${token}` } })
+    fetch(`${API_URL}/reportes`, { headers: { 'Authorization': `Bearer ${token}` } })
       .then(r => r.json())
       .then(setReportes)
       .catch(console.error)
@@ -21,7 +22,7 @@ export default function TicketTable({ user }) {
 
   const handleUpdate = async (id, campo, valor) => {
     try {
-      const res = await fetch(`http://localhost:3000/api/reportes/${id}`, {
+      const res = await fetch(`${API_URL}/reportes/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ [campo]: valor })
@@ -73,7 +74,7 @@ export default function TicketTable({ user }) {
                 <td className="px-6 py-4 text-slate-700">{r.punto || '-'}</td>
                 <td className="px-6 py-4 text-slate-600 truncate max-w-xs">{r.falla}</td>
                 <td className="px-6 py-4">
-                  {r.imagen ? <a href={`http://localhost:3000/api/reportes/${r.id}/imagen?token=${token}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Ver Foto</a> : <span className="text-slate-400">N/A</span>}
+                  {r.imagen ? <a href={`${API_URL}/reportes/${r.id}/imagen?token=${token}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Ver Foto</a> : <span className="text-slate-400">N/A</span>}
                 </td>
                 <td className="px-6 py-4 text-slate-700">
                    {puedeEditar && user?.rol === 'admin' ? (
