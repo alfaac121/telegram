@@ -4,6 +4,28 @@ Bienvenido al repositorio del **Bot de Soporte Técnico para Telegram**. Este si
 
 ---
 
+## 🚀 Guía de Arranque Rápido (Dos Terminales)
+
+Copia y pega estos comandos en orden para tener el sistema funcionando en 1 minuto:
+
+### terminal 1: Backend & Bot
+```bash
+cd telegram-bot
+npm install
+sudo mysql < setup.sql  # (Solo la primera vez)
+npm start
+```
+
+### terminal 2: Panel Web
+```bash
+cd telegram-bot/frontend
+npm install
+npm run dev
+```
+*Abrir: http://localhost:5173*
+
+---
+
 ## 🛠️ Manual de Construcción Desde Cero (Pasos Reales)
 
 Si quieres replicar este proyecto en una computadora limpia o entender cómo se construyó de principio a fin, sigue este orden:
