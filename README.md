@@ -169,39 +169,26 @@ Si el bot no arranca porque no encuentra la base de datos:
 ```bash
 # Iniciar MySQL en Linux
 sudo service mysql start
-# Verificar estado
-sudo service mysql status
 ```
 
-### 2. Error `Unknown database 'telegram_bot'`
+### 2. Error `Access denied for user 'root'...'` (Permisos)
+Si te dice que el usuario `root` no tiene acceso o requiere contraseña, ejecuta este comando para dejarlo libre (estándar de desarrollo):
+```bash
+sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+```
+
+### 3. Error `Unknown database 'telegram_bot'`
 Si la base de datos no existe, créala e importa las tablas así:
 ```bash
 sudo mysql < setup.sql
 ```
 
-### 3. Olvido de contraseña o "Usuario no encontrado"
-Si no puedes entrar al panel web con `admin@admin.com / 123456`, ejecuta este comando en la raíz para resetear el acceso:
+### 4. Olvido de contraseña del Panel Web
+Si no puedes entrar al panel web con `admin@admin.com / 123456`, ejecuta el fix de usuario:
 ```bash
-cat <<EOF > fix_admin.js
-const db = require('./src/config/db').promise;
-const bcrypt = require('bcryptjs');
-async function fix() {
-  const hash = await bcrypt.hash('123456', 10);
-  await db.query('DELETE FROM usuarios WHERE email = "admin@admin.com"');
-  const [res] = await db.query('INSERT INTO usuarios (username, email, password, rol) VALUES (?, ?, ?, ?)', ['admin', 'admin@admin.com', hash, 'admin']);
-  await db.query('INSERT IGNORE INTO permisos (id_usuario, id_modulo) SELECT ?, id FROM modulos', [res.insertId]);
-  console.log('✅ Usuario Admin configurado con éxito');
-  process.exit(0);
-}
-fix();
-EOF
 node fix_admin.js
 ```
-
-### 4. Navegación rápida por terminal
-- **Entrar al Panel Web:** `cd frontend`
-- **Volver a la carpeta principal:** `cd ..`
-- **Ver archivos en la carpeta:** `ls`
+*(Este comando ya viene incluido en la raíz y resetea al administrador maestro).*
 
 ---
-*Documentación avanzada para la estabilidad empresarial y gestión de soporte.*
+*Instalación simplificada para máxima velocidad de despliegue.*
