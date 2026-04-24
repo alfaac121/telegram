@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: telegram_bot_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: telegram_bot
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      # Automáticamente ejecuta este script al iniciar la BD vacía
+      - ./setup.sql:/docker-entrypoint-initdb.d/setup.sql
+
+  app:
+    build: .
+    container_name: telegram_bot_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_NAME=telegram_bot
+      # - PORT=3000
+      # - JWT_SECRET=secreto-seguro-telegram-bot
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    container_name: telegram_bot_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Avoid overwriting the container's node_modules with local empty folders
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Helps with hot-reloading on certain OS/FileSystems inside Docker
+
+volumes:
+  db_data:
