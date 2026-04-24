@@ -26,6 +26,25 @@ npm run dev
 
 ---
 
+## 🆘 ¿Algo salió mal? (Soluciones rápidas)
+
+Si al ejecutar los comandos anteriores te sale un error, prueba esto según el mensaje:
+
+*   **Si dice `ECONNREFUSED`**: Significa que MySQL está apagado.
+    ```bash
+    sudo service mysql start
+    ```
+*   **Si dice `Access denied for user 'root'`**: Corre este comando para liberar el acceso (estándar de desarrollo):
+    ```bash
+    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+    ```
+*   **Si no puedes entrar al Panel Web (Error de login)**: Resetea el administrador maestro:
+    ```bash
+    node fix_admin.js
+    ```
+
+---
+
 ## 🛠️ Manual de Construcción Desde Cero (Pasos Reales)
 
 Si quieres replicar este proyecto en una computadora limpia o entender cómo se construyó de principio a fin, sigue este orden:
