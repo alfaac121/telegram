@@ -2,18 +2,19 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import API_URL from '../api';
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ totalReportes: 0, pendientes: 0, resueltos: 0, enProceso: 0, totalUsuarios: 0 });
   const cardsRef = useRef([]);
-  
+
   useEffect(() => {
-    fetch('http://localhost:3000/api/reportes/stats', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+    fetch(`${API_URL}/reportes/stats`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(r => r.json())
       .then(setStats)
       .catch(console.error);
 
-    gsap.fromTo(cardsRef.current, 
+    gsap.fromTo(cardsRef.current,
       { y: 30, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
     );
@@ -26,7 +27,6 @@ export default function Dashboard() {
     </div>
   );
 
-  // Siempre 3 segmentos visibles: usamos 0.01 como minimo para que Recharts pinte el arco incluso con valor 0
   const chartData = [
     { name: 'Pendientes', value: Math.max(stats.pendientes, 0.01), real: stats.pendientes, color: '#f59e0b' },
     { name: 'En Proceso', value: Math.max(stats.enProceso,  0.01), real: stats.enProceso,  color: '#3b82f6' },
@@ -47,7 +47,7 @@ export default function Dashboard() {
         <Card idx={3} title="Resueltos"       value={stats.resueltos}     color="text-emerald-500" />
         <Card idx={4} title="Usuarios Vivos"  value={stats.totalUsuarios} color="text-indigo-500"  />
       </div>
-      
+
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Estado de los Tickets</h2>

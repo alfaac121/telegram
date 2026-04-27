@@ -8,8 +8,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: telegram_bot
-    ports:
-      - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
       # Automáticamente ejecuta este script al iniciar la BD vacía

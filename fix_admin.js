@@ -1,5 +1,5 @@
-const db = require('./src/config/db').promise;
-const bcrypt = require('bcryptjs');
+const db = require('./src/config/db');
+const bcrypt = require('bcrypt');
 
 async function fix() {
   const hash = await bcrypt.hash('123456', 10);

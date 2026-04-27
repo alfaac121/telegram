@@ -9,6 +9,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const reportesRoutes = require('./src/routes/reportesRoutes');
 const usuariosRoutes = require('./src/routes/usuariosRoutes');
 const botRoutes = require('./src/routes/botRoutes'); // for bot HTTP decoupled logic
+const configRoutes = require('./src/routes/configRoutes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/reportes', reportesRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/bot', botRoutes); // open/internal paths for the bot to hit DB
+app.use('/api/config', configRoutes);
 
 // ── Telegram Bot ────────────────────────────────────────────────
 const TOKEN = '8628255931:AAEx1OuJlawM3LJImleD9Yg9H8b6xQC2F9Y';

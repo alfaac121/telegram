@@ -46,7 +46,7 @@ export default function App() {
 
         <Route path="/" element={<ProtectedRoute user={user}><Dashboard /></ProtectedRoute>} />
         <Route path="/soporte/tickets"      element={<ProtectedRoute user={user}><TicketTable user={user} /></ProtectedRoute>} />
-        <Route path="/soporte/manageengine" element={<ProtectedRoute user={user}><ExternalModule name="ManageEngine"  url="https://www.manageengine.com" /></ProtectedRoute>} />
+        <Route path="/soporte/manageengine" element={<ProtectedRoute user={user}><ExternalModule name="ManageEngine"  url="http://10.98.98.30:8443/WorkOrder.do" /></ProtectedRoute>} />
 
         <Route path="/operaciones/bnet"    element={<ProtectedRoute user={user}><ExternalModule name="BNET"      url="http://bnet.tuempresa.local" /></ProtectedRoute>} />
         <Route path="/operaciones/sims"    element={<ProtectedRoute user={user}><ExternalModule name="SIMS"      url="http://sims.tuempresa.local" /></ProtectedRoute>} />

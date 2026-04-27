@@ -1,5 +1,5 @@
 
-const db = require('../config/db').promise;
+const db = require('../config/db');
 
 exports.obtenerTodos = async (rol, username) => {
   if (rol === 'tecnico') {

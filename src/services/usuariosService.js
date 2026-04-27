@@ -1,5 +1,5 @@
 
-const db = require('../config/db').promise;
+const db = require('../config/db');
 
 exports.obtenerClientes = async () => {
   const [rows] = await db.query('SELECT * FROM clientes_telegram ORDER BY id DESC');
