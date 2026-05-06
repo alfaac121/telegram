@@ -152,7 +152,9 @@ configuracion (clave, valor)
 | `/soporte/tickets` | Tabla de tickets con gestión | Admin, Técnico |
 | `/soporte/manageengine` | Integración ManageEngine ServiceDesk | Todos |
 | `/operaciones/bnet` | Sistema BNET | Todos |
-| `/operaciones/sims` | Sistema SIMS | Todos |
+| `/operaciones/siis` | Sistema SIIS | Todos |
+| `/operaciones/bet-bogota` | Sistema Bet Bogotá | Todos |
+| `/operaciones/benet-yumbo` | Sistema Benet Yumbo | Todos |
 | `/personal/traslados` | Módulo de traslados | Todos |
 | `/personal/sis` | Sistema SIS | Todos |
 

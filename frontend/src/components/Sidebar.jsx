@@ -18,7 +18,9 @@ const MENU = [
     icono: '⚙️',
     items: [
       { label: 'BNET', path: '/operaciones/bnet' },
-      { label: 'SIMS', path: '/operaciones/sims' },
+      { label: 'SIIS', path: '/operaciones/siis' },
+      { label: 'Bet Bogotá', path: '/operaciones/bet-bogota' },
+      { label: 'Benet Yumbo', path: '/operaciones/benet-yumbo' },
     ],
   },
   {
