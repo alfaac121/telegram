@@ -1,10 +1,19 @@
 /**
- * Bot de Telegram — Handlers refactorizados para usar API HTTP
+ * Bot de Telegram — Handlers para múltiples áreas organizacionales
  */
 const fetch = require('node-fetch');
 const API_URL = 'http://localhost:3000/api/bot';
 
 const users = {};
+
+const AREAS = {
+  soporte_ti: 'Soporte TI',
+  comercial: 'Comercial',
+  auditoria: 'Auditoría',
+  contabilidad: 'Contabilidad',
+  talento_humano: 'Talento Humano',
+  otros: 'Otros servicios'
+};
 
 function obtenerSaludo() {
   const hora = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota', hour: 'numeric', hour12: false });
@@ -15,28 +24,82 @@ function obtenerSaludo() {
 }
 
 function registrarHandlers(bot) {
-  bot.onText(/\/start/, (msg) => {
-    const chatId = msg.chat.id;
+  // --- MENU PRINCIPAL ---
+  function mostrarMenuPrincipal(chatId) {
     delete users[chatId];
-    bot.sendMessage(chatId, `${obtenerSaludo()}, bienvenido a tu soporte virtual ¿qué deseas hacer?`, {
-      reply_markup: { inline_keyboard: [[{ text: '🛑 Reportar falla', callback_data: 'falla' }]] }
+    bot.sendMessage(chatId, `${obtenerSaludo()}, bienvenido al Centro de Servicios Integrados. Por favor, selecciona el área con la que deseas comunicarte:`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: '💻 Soporte TI', callback_data: 'area_soporte_ti' }, { text: '📈 Comercial', callback_data: 'area_comercial' }],
+          [{ text: '🔍 Auditoría', callback_data: 'area_auditoria' }, { text: '📒 Contabilidad', callback_data: 'area_contabilidad' }],
+          [{ text: '👥 Talento Humano', callback_data: 'area_talento_humano' }, { text: '⚙️ Otros servicios', callback_data: 'area_otros' }]
+        ]
+      }
     });
+  }
+
+  // --- SUBMENÚS POR ÁREA ---
+  function mostrarSubmenu(chatId, areaKey) {
+    const areaNombre = AREAS[areaKey];
+    users[chatId] = { area: areaNombre, areaKey: areaKey };
+    
+    let opciones = [];
+    if (areaKey === 'soporte_ti') {
+      opciones = [
+        [{ text: '🛑 Reportar falla', callback_data: 'accion_reportar' }],
+        [{ text: '🔍 Consultar estado', callback_data: 'accion_estado' }],
+        [{ text: '⬅️ Volver', callback_data: 'volver_principal' }]
+      ];
+    } else {
+      opciones = [
+        [{ text: '📝 Registrar solicitud', callback_data: 'accion_reportar' }],
+        [{ text: '🔍 Consultar estado', callback_data: 'accion_estado' }],
+        [{ text: '⬅️ Volver', callback_data: 'volver_principal' }]
+      ];
+    }
+
+    bot.sendMessage(chatId, `📍 Has seleccionado: *${areaNombre}*\n¿Qué deseas hacer?`, {
+      parse_mode: 'Markdown',
+      reply_markup: { inline_keyboard: opciones }
+    });
+  }
+
+  bot.onText(/\/start/, (msg) => {
+    mostrarMenuPrincipal(msg.chat.id);
   });
 
-  bot.onText(/\/reportar/, (msg) => {
-    users[msg.chat.id] = { paso: 'esperando_punto', punto: '', falla: '', asesora: '', imagen: null };
-    bot.sendMessage(msg.chat.id, '¿Cuál es el punto?');
-  });
-
-  bot.onText(/\/estado/, (msg) => {
-    users[msg.chat.id] = { paso: 'esperando_ticket' };
-    bot.sendMessage(msg.chat.id, 'Ingresa tu número de ticket');
+  bot.onText(/\/menu/, (msg) => {
+    mostrarMenuPrincipal(msg.chat.id);
   });
 
   bot.on('callback_query', async (query) => {
     const chatId = query.message.chat.id;
     const data = query.data;
     bot.answerCallbackQuery(query.id).catch(() => {});
+
+    if (data.startsWith('area_')) {
+      const areaKey = data.replace('area_', '');
+      mostrarSubmenu(chatId, areaKey);
+      return;
+    }
+
+    if (data === 'volver_principal') {
+      mostrarMenuPrincipal(chatId);
+      return;
+    }
+
+    if (data === 'accion_reportar') {
+      const area = users[chatId]?.area || 'Soporte TI';
+      users[chatId] = { ...users[chatId], paso: 'esperando_punto', punto: '', falla: '', asesora: '', imagen: null };
+      bot.sendMessage(chatId, `Iniciando reporte para *${area}*.\n\n¿Cuál es el punto de venta o sucursal?`, { parse_mode: 'Markdown' });
+      return;
+    }
+
+    if (data === 'accion_estado') {
+      users[chatId] = { ...users[chatId], paso: 'esperando_ticket' };
+      bot.sendMessage(chatId, 'Ingresa tu número de ticket para consultar el estado:');
+      return;
+    }
 
     if (data === 'confirmar_si') {
       const estado = users[chatId];
@@ -47,6 +110,7 @@ function registrarHandlers(bot) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             user_id: chatId,
+            area: estado.area,
             punto: estado.punto,
             falla: estado.falla,
             asesora: estado.asesora || null,
@@ -55,8 +119,14 @@ function registrarHandlers(bot) {
         });
         const result = await res.json();
         if (!res.ok) throw new Error('Error de API');
-        bot.sendMessage(chatId, `✅ Reporte guardado correctamente\n\n🎫 Tu ticket es: #${result.id}\n\nGuárdalo para consultar el estado.`, {
-          reply_markup: { inline_keyboard: [[{ text: '🔍 Consultar estado', callback_data: 'estado' }]] }
+        bot.sendMessage(chatId, `✅ Registro guardado correctamente en *${estado.area}*\n\n🎫 Tu ticket es: #${result.id}\n\nConsérvalo para futuras consultas.`, {
+          parse_mode: 'Markdown',
+          reply_markup: { 
+            inline_keyboard: [
+              [{ text: '🔍 Consultar estado', callback_data: 'accion_estado' }],
+              [{ text: '🏠 Volver al inicio', callback_data: 'volver_principal' }]
+            ] 
+          }
         });
       } catch (e) {
         bot.sendMessage(chatId, '⚠️ Error al guardar el reporte. Intenta de nuevo.');
@@ -66,26 +136,16 @@ function registrarHandlers(bot) {
     }
 
     if (data === 'confirmar_no') {
-      delete users[chatId];
-      bot.sendMessage(chatId, '🚫 Reporte cancelado. Escribe /start para volver al menú.');
+      const areaKey = users[chatId]?.areaKey;
+      if (areaKey) mostrarSubmenu(chatId, areaKey);
+      else mostrarMenuPrincipal(chatId);
       return;
     }
 
     if (data === 'editar_punto')   { users[chatId].paso = 'editando_punto';   bot.sendMessage(chatId, '✏️ Escribe el nuevo PUNTO:');  return; }
-    if (data === 'editar_falla')   { users[chatId].paso = 'editando_falla';   bot.sendMessage(chatId, '✏️ Escribe la nueva FALLA:');  return; }
-    if (data === 'editar_asesora') { users[chatId].paso = 'editando_asesora'; bot.sendMessage(chatId, '✏️ Escribe el nuevo número de la asesora o escribe "omitir":'); return; }
+    if (data === 'editar_falla')   { users[chatId].paso = 'editando_falla';   bot.sendMessage(chatId, '✏️ Escribe la nueva DESCRIPCIÓN:');  return; }
+    if (data === 'editar_asesora') { users[chatId].paso = 'editando_asesora'; bot.sendMessage(chatId, '✏️ Escribe el nuevo número de contacto o escribe "omitir":'); return; }
     if (data === 'editar_imagen')  { users[chatId].paso = 'editando_imagen';  bot.sendMessage(chatId, "✏️ Envía la nueva imagen o escribe 'omitir':"); return; }
-
-    switch (data) {
-      case 'falla':
-        users[chatId] = { paso: 'esperando_punto', punto: '', falla: '', asesora: '', imagen: null };
-        bot.sendMessage(chatId, '¿Cuál es el punto?');
-        break;
-      case 'estado':
-        users[chatId] = { paso: 'esperando_ticket' };
-        bot.sendMessage(chatId, 'Ingresa tu número de ticket');
-        break;
-    }
   });
 
   bot.on('message', async (msg) => {
@@ -96,28 +156,30 @@ function registrarHandlers(bot) {
     const usuario = msg.from.first_name || 'usuario';
     const estado = users[chatId];
 
+    // Registro silencioso de interacción
     fetch(`${API_URL}/usuarios`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ telegram_id: msg.from.id, nombre: usuario, punto: estado ? estado.punto : null, descripcion: texto })
-    }).catch(e => console.error(e));
+    }).catch(e => console.error('Error registrando usuario:', e));
 
-    if (!texto && !foto) return bot.sendMessage(chatId, '⚠️ Mensaje vacío.');
-    if (!estado) return bot.sendMessage(chatId, 'Hola 👋 Escribe /start para ver el menú.');
+    if (!texto && !foto) return;
+    if (!estado) return bot.sendMessage(chatId, 'Hola 👋 Escribe /start para ver el menú de áreas.');
 
     // ── Flujo de reporte ─────────────────────────────────────────
 
     if (estado.paso === 'esperando_punto') {
       estado.punto = texto;
       estado.paso = 'esperando_falla';
-      return bot.sendMessage(chatId, 'Describe la falla');
+      const label = estado.area === 'Soporte TI' ? 'la falla' : 'tu solicitud';
+      return bot.sendMessage(chatId, `Describe detalladamente ${label}:`);
     }
 
     if (estado.paso === 'esperando_falla') {
-      if (foto) return bot.sendMessage(chatId, '⚠️ Por favor describe la falla con texto.');
+      if (foto) return bot.sendMessage(chatId, '⚠️ Por favor describe la situación con texto.');
       estado.falla = texto;
       estado.paso = 'esperando_asesora';
-      return bot.sendMessage(chatId, '📞 ¿Cuál es el número de la asesora? (o escribe "omitir")');
+      return bot.sendMessage(chatId, '📞 ¿Cuál es tu número de contacto? (o escribe "omitir")');
     }
 
     if (estado.paso === 'esperando_asesora') {
@@ -129,8 +191,9 @@ function registrarHandlers(bot) {
 
     if (estado.paso === 'esperando_imagen') {
       if (foto) estado.imagen = foto;
-      else if (texto.toLowerCase() === 'omitir') estado.imagen = null;
-      else return bot.sendMessage(chatId, "⚠️ Por favor envía una imagen o escribe 'omitir'.");
+      else if (texto && texto.toLowerCase() === 'omitir') estado.imagen = null;
+      else if (!foto) return bot.sendMessage(chatId, "⚠️ Por favor envía una imagen o escribe 'omitir'.");
+      
       estado.paso = 'confirmando';
       return enviarConfirmacion(chatId, estado);
     }
@@ -143,7 +206,7 @@ function registrarHandlers(bot) {
       if (estado.paso === 'editando_asesora') estado.asesora = texto.toLowerCase() === 'omitir' ? '' : texto;
       if (estado.paso === 'editando_imagen') {
         if (foto) estado.imagen = foto;
-        else if (texto.toLowerCase() === 'omitir') estado.imagen = null;
+        else if (texto && texto.toLowerCase() === 'omitir') estado.imagen = null;
         else return bot.sendMessage(chatId, "⚠️ Envía una imagen o escribe 'omitir'.");
       }
       estado.paso = 'confirmando';
@@ -153,17 +216,20 @@ function registrarHandlers(bot) {
     // ── Confirmación visual ──────────────────────────────────────
 
     function enviarConfirmacion(idChat, dataEstado) {
-      const asesoraLine = dataEstado.asesora ? `\nAsesora: ${dataEstado.asesora}` : '';
-      const tieneImg = dataEstado.imagen ? '\n\n🖼️ [Evidencia adjunta]' : '';
+      const contactLine = dataEstado.asesora ? `\n📞 Contacto: ${dataEstado.asesora}` : '';
+      const tieneImg = dataEstado.imagen ? '\n🖼️ [Evidencia adjunta]' : '';
+      const label = dataEstado.area === 'Soporte TI' ? 'Falla' : 'Solicitud';
+
       bot.sendMessage(idChat,
-        `📋 Confirma tu reporte:\n\nPunto: ${dataEstado.punto}\nFalla: ${dataEstado.falla}${asesoraLine}${tieneImg}\n\n¿Es correcto?`,
+        `📋 *Confirmación de Solicitud*\n\n*Área:* ${dataEstado.area}\n*Punto:* ${dataEstado.punto}\n*${label}:* ${dataEstado.falla}${contactLine}${tieneImg}\n\n¿La información es correcta?`,
         {
+          parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: '✅ Sí, guardar', callback_data: 'confirmar_si' }],
-              [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Falla', callback_data: 'editar_falla' }],
-              [{ text: '✏️ Editar N° Asesora', callback_data: 'editar_asesora' }, { text: '✏️ Editar Evidencia', callback_data: 'editar_imagen' }],
-              [{ text: '❌ Cancelar reporte', callback_data: 'confirmar_no' }],
+              [{ text: '✅ Sí, enviar', callback_data: 'confirmar_si' }],
+              [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Contenido', callback_data: 'editar_falla' }],
+              [{ text: '✏️ Editar Contacto', callback_data: 'editar_asesora' }, { text: '✏️ Editar Imagen', callback_data: 'editar_imagen' }],
+              [{ text: '❌ Cancelar', callback_data: 'confirmar_no' }],
             ]
           }
         }
@@ -173,17 +239,18 @@ function registrarHandlers(bot) {
     // ── Consulta de ticket ───────────────────────────────────────
 
     if (estado.paso === 'esperando_ticket') {
-      if (!/^\d+$/.test(texto)) return bot.sendMessage(chatId, '❌ Ingresa un número válido');
+      if (!/^\d+$/.test(texto)) return bot.sendMessage(chatId, '❌ Ingresa un número de ticket válido');
       try {
         const res = await fetch(`${API_URL}/reportes/${texto}`);
         const r = await res.json();
         if (r && r.id) {
           if (String(r.user_id) !== String(chatId)) {
-            bot.sendMessage(chatId, `🚫 Acceso denegado: El ticket no te pertenece.`);
+            bot.sendMessage(chatId, `🚫 Acceso denegado: Este ticket no fue registrado con tu cuenta.`);
           } else {
             const fechaFormat = new Date(r.fecha).toLocaleString('es-CO');
-            const asesoraLine = r.asesora ? `\nAsesora: ${r.asesora}` : '';
-            bot.sendMessage(chatId, `📄 Estado del ticket #${r.id}:\nPunto: ${r.punto}\nFalla: ${r.falla}${asesoraLine}\nEstado: ${r.estado}\nTécnico: ${r.tecnico || 'No asignado'}\nFecha: ${fechaFormat}`);
+            const asesoraLine = r.asesora ? `\n📞 Contacto: ${r.asesora}` : '';
+            const areaLine = r.area ? `\n📍 Área: ${r.area}` : '';
+            bot.sendMessage(chatId, `📄 *Estado del Ticket #${r.id}*${areaLine}\n*Punto:* ${r.punto}\n*Descripción:* ${r.falla}${asesoraLine}\n*Estado:* ${r.estado}\n*Técnico:* ${r.tecnico || 'No asignado'}\n*Fecha:* ${fechaFormat}`, { parse_mode: 'Markdown' });
           }
         } else {
           const res2 = await fetch(`${API_URL}/usuarios/${chatId}/reportes`);
@@ -195,7 +262,9 @@ function registrarHandlers(bot) {
       } catch (e) {
         bot.sendMessage(chatId, '⚠️ Error al consultar el ticket.');
       } finally {
-        delete users[chatId];
+        const currentAreaKey = estado.areaKey;
+        if (currentAreaKey) mostrarSubmenu(chatId, currentAreaKey);
+        else mostrarMenuPrincipal(chatId);
       }
     }
   });

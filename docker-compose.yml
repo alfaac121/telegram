@@ -26,6 +26,9 @@ services:
       - DB_NAME=telegram_bot
       # - PORT=3000
       # - JWT_SECRET=secreto-seguro-telegram-bot
+    volumes:
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
     depends_on:
       - db
 

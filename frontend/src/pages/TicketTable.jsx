@@ -58,6 +58,7 @@ export default function TicketTable({ user }) {
           <thead className="bg-slate-50 text-slate-600 font-medium">
             <tr>
               <th className="px-6 py-3 border-b border-slate-200">ID</th>
+              <th className="px-6 py-3 border-b border-slate-200">Área</th>
               <th className="px-6 py-3 border-b border-slate-200">Usuario ID</th>
               <th className="px-6 py-3 border-b border-slate-200">Punto</th>
               <th className="px-6 py-3 border-b border-slate-200">Falla</th>
@@ -71,6 +72,16 @@ export default function TicketTable({ user }) {
             {reportes.map(r => (
               <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-700">#{r.id}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                    r.area === 'Soporte TI' ? 'bg-blue-100 text-blue-700' :
+                    r.area === 'Comercial' ? 'bg-emerald-100 text-emerald-700' :
+                    r.area === 'Talento Humano' ? 'bg-purple-100 text-purple-700' :
+                    'bg-slate-100 text-slate-700'
+                  }`}>
+                    {r.area || 'Soporte TI'}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-slate-500">{r.user_id}</td>
                 <td className="px-6 py-4 text-slate-700">{r.punto || '-'}</td>
                 <td className="px-6 py-4 text-slate-600 truncate max-w-xs">{r.falla}</td>
@@ -117,7 +128,7 @@ export default function TicketTable({ user }) {
             ))}
             {reportes.length === 0 && (
               <tr>
-                <td colSpan="8" className="px-6 py-8 text-center text-slate-500">No hay tickets disponibles.</td>
+                <td colSpan="9" className="px-6 py-8 text-center text-slate-500">No hay tickets disponibles.</td>
               </tr>
             )}
           </tbody>
