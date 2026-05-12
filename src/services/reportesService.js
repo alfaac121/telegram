@@ -24,18 +24,37 @@ exports.actualizarReporte = async (id, estado, tecnico, userRol) => {
   return { ticket, newTecnico };
 };
 
-exports.obtenerStats = async () => {
-  const [total] = await db.query('SELECT COUNT(*) as total FROM reportes');
-  const [pendientes] = await db.query("SELECT COUNT(*) as total FROM reportes WHERE estado = 'pendiente'");
-  const [resueltos] = await db.query("SELECT COUNT(*) as total FROM reportes WHERE estado = 'resuelto'");
-  const [enProceso] = await db.query("SELECT COUNT(*) as total FROM reportes WHERE estado = 'en_proceso'");
-  const [usuarios] = await db.query('SELECT COUNT(DISTINCT telegram_id) as total FROM clientes_telegram');
+exports.obtenerStats = async (tecnico = null) => {
+  let whereClause = "";
+  let params = [];
+
+  if (tecnico && tecnico !== "todos") {
+    whereClause = " WHERE tecnico = ?";
+    params = [tecnico];
+  }
+
+  const [total] = await db.query(`SELECT COUNT(*) as total FROM reportes${whereClause}`, params);
+  const [pendientes] = await db.query(`SELECT COUNT(*) as total FROM reportes WHERE estado = 'pendiente'${tecnico && tecnico !== 'todos' ? ' AND tecnico = ?' : ''}`, params);
+  const [resueltos] = await db.query(`SELECT COUNT(*) as total FROM reportes WHERE estado = 'resuelto'${tecnico && tecnico !== 'todos' ? ' AND tecnico = ?' : ''}`, params);
+  const [enProceso] = await db.query(`SELECT COUNT(*) as total FROM reportes WHERE estado = 'en_proceso'${tecnico && tecnico !== 'todos' ? ' AND tecnico = ?' : ''}`, params);
+  
+  // Si filtramos por técnico, contamos los usuarios únicos que ese técnico ha atendido
+  const usuariosQuery = tecnico && tecnico !== 'todos' 
+    ? `SELECT COUNT(DISTINCT user_id) as total FROM reportes WHERE tecnico = ?`
+    : `SELECT COUNT(DISTINCT telegram_id) as total FROM clientes_telegram`;
+  
+  const [usuarios] = await db.query(usuariosQuery, params);
+  
+  // Obtener lista de técnicos únicos para el filtro
+  const [listaTecnicos] = await db.query('SELECT DISTINCT tecnico FROM reportes WHERE tecnico IS NOT NULL AND tecnico != ""');
+
   return {
       totalReportes: total[0].total,
       pendientes: pendientes[0].total,
       resueltos: resueltos[0].total,
       enProceso: enProceso[0].total,
       totalUsuarios: usuarios[0].total,
+      tecnicos: listaTecnicos.map(t => t.tecnico)
   };
 };
 
