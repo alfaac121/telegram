@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import API_URL from '../api';
 
 export default function Dashboard() {
@@ -55,9 +55,9 @@ export default function Dashboard() {
             onChange={(e) => setTecnicoSel(e.target.value)}
             className="bg-slate-50 border-none text-slate-700 text-sm font-semibold rounded-md focus:ring-0 cursor-pointer pr-8"
           >
-            <option value="todos">🌍 Todos los técnicos</option>
+            <option value="todos">Todos los técnicos</option>
             {stats.tecnicos && stats.tecnicos.map(t => (
-              <option key={t} value={t}>👨‍🔧 {t}</option>
+              <option key={t} value={t}>{t}</option>
             ))}
           </select>
         </div>
@@ -108,12 +108,36 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="p-6 rounded-xl border border-blue-100 flex flex-col justify-center items-center shadow-inner" style={{background: 'linear-gradient(120deg, #eff6ff 0%, #f8fafc 100%)'}}>
-           <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-4 shadow-sm">
-             <span className="text-2xl">✨</span>
-           </div>
-           <h3 className="text-blue-800 font-semibold text-lg text-center">Operatividad Centralizada</h3>
-           <p className="text-blue-600 text-center mt-2 text-sm max-w-xs">Este servidor procesa tu bot de Telegram y expone la API para el portal simultáneamente.</p>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Volumen por Estado</h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#64748b', fontSize: 12}}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fill: '#64748b', fontSize: 12}}
+                />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  formatter={(value, name, props) => [props.payload.real, 'Tickets']}
+                />
+                <Bar dataKey="real" radius={[4, 4, 0, 0]} barSize={40}>
+                  {chartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
     </div>

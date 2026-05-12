@@ -2,6 +2,7 @@
  * Bot de Telegram — Handlers para múltiples áreas organizacionales
  */
 const fetch = require('node-fetch');
+const aiService = require('../services/aiService');
 const API_URL = 'http://localhost:3000/api/bot';
 
 const users = {};
@@ -21,6 +22,46 @@ function obtenerSaludo() {
   if (h < 12) return 'Buenos días';
   if (h < 18) return 'Buenas tardes';
   return 'Buenas noches';
+}
+
+/**
+ * Lógica de Procesamiento Inteligente (Smart Parser)
+ * Intenta extraer Punto, Área y Falla de un solo mensaje
+ */
+function procesarMensajeInteligente(texto) {
+  const t = texto.toLowerCase();
+  const datos = { punto: null, area: null, subCategoria: null, falla: texto };
+
+  // 1. Detectar Punto (ej: "punto 72", "p72", "sucursal sur")
+  const puntoMatch = t.match(/(?:punto|sucursal|p\.?|suc\.?)\s*(\w+\d*|\d+)/i);
+  if (puntoMatch) datos.punto = puntoMatch[1].toUpperCase();
+
+  // 2. Detectar Área y Subcategoría por palabras clave
+  if (t.includes('internet') || t.includes('wifi') || t.includes('red') || t.includes('conectividad')) {
+    datos.area = 'Soporte TI';
+    datos.areaKey = 'soporte_ti';
+    if (t.includes('wifi')) datos.subCategoria = 'Falla de Wi-Fi';
+    else if (t.includes('lento')) datos.subCategoria = 'Lentitud de Red';
+    else datos.subCategoria = 'Sin Internet';
+  } 
+  else if (t.includes('clave') || t.includes('acceso') || t.includes('entrar') || t.includes('usuario') || t.includes('password')) {
+    datos.area = 'Soporte TI';
+    datos.areaKey = 'soporte_ti';
+    if (t.includes('correo')) datos.subCategoria = 'Acceso a Correo';
+    else if (t.includes('siis')) datos.subCategoria = 'Acceso a SIIS';
+    else datos.subCategoria = 'Acceso Otros';
+  }
+  else if (t.includes('impresora') || t.includes('imprime') || t.includes('toner') || t.includes('papel')) {
+    datos.area = 'Soporte TI';
+    datos.areaKey = 'soporte_ti';
+    datos.subCategoria = 'Falla en Impresora';
+  }
+  else if (t.includes('nomina') || t.includes('sueldo') || t.includes('vacaciones') || t.includes('contrato')) {
+    datos.area = 'Talento Humano';
+    datos.areaKey = 'talento_humano';
+  }
+
+  return datos;
 }
 
 function registrarHandlers(bot) {
@@ -269,6 +310,7 @@ function registrarHandlers(bot) {
   });
 
   bot.on('message', async (msg) => {
+    if (msg.voice) return; // Evitar que el handler general procese audios (ya lo hace bot.on('voice'))
     if (msg.text && msg.text.startsWith('/')) return;
     const chatId = msg.chat.id;
     const texto = (msg.text || '').trim();
@@ -283,8 +325,28 @@ function registrarHandlers(bot) {
       body: JSON.stringify({ telegram_id: msg.from.id, nombre: usuario, punto: estado ? estado.punto : null, descripcion: texto })
     }).catch(e => console.error('Error registrando usuario:', e));
 
-    if (!texto && !foto) return;
-    if (!estado) return bot.sendMessage(chatId, 'Hola 👋 Escribe /start para ver el menú de áreas.');
+    if (!texto && !foto && !msg.voice) return;
+
+    // --- DETECCIÓN INTELIGENTE DE MENSAJE (One-Shot Reporting) ---
+    if (!estado && texto && texto.length > 15) {
+      bot.sendChatAction(chatId, 'typing');
+      const info = await aiService.analizarIntencion(texto);
+      
+      users[chatId] = {
+        area: info.area || 'Soporte TI',
+        areaKey: 'soporte_ti', // Por defecto si no detecta bien
+        subCategoria: info.subCategoria,
+        punto: info.punto || '',
+        falla: info.falla,
+        asesora: '',
+        imagen: null,
+        paso: 'confirmando'
+      };
+      bot.sendMessage(chatId, `🧠 *He analizado tu mensaje con IA.*`, { parse_mode: 'Markdown' });
+      return enviarConfirmacion(chatId, users[chatId]);
+    }
+
+    if (!estado) return bot.sendMessage(chatId, 'Hola 👋 Escribe /start para ver el menú de áreas o describe tu problema directamente (ej: "Falla internet en punto 72").');
 
     // ── Flujo de reporte ─────────────────────────────────────────
 
@@ -340,25 +402,8 @@ function registrarHandlers(bot) {
 
     // ── Confirmación visual ──────────────────────────────────────
 
-    function enviarConfirmacion(idChat, dataEstado) {
-      const contactLine = dataEstado.asesora ? `\n📞 *Contacto:* ${dataEstado.asesora}` : '';
-      const tieneImg = dataEstado.imagen ? '\n🖼️ [Evidencia adjunta]' : '';
-      const categoriaLine = dataEstado.subCategoria ? `\n🛠️ *Categoría:* ${dataEstado.subCategoria}` : '';
-
-      bot.sendMessage(idChat,
-        `📋 *Resumen de tu Requerimiento*\n\n*Área:* ${dataEstado.area}${categoriaLine}\n*Punto:* ${dataEstado.punto}\n*Descripción:* ${dataEstado.falla}${contactLine}${tieneImg}\n\n¿Deseas enviar este ticket a la mesa de ayuda?`,
-        {
-          parse_mode: 'Markdown',
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: '✅ Confirmar y Enviar', callback_data: 'confirmar_si' }],
-              [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Descripción', callback_data: 'editar_falla' }],
-              [{ text: '✏️ Editar Contacto', callback_data: 'editar_asesora' }, { text: '✏️ Editar Imagen', callback_data: 'editar_imagen' }],
-              [{ text: '❌ Cancelar', callback_data: 'confirmar_no' }],
-            ]
-          }
-        }
-      );
+    if (estado.paso === 'confirmando') {
+      return enviarConfirmacion(chatId, estado);
     }
 
     // ── Consulta de ticket ───────────────────────────────────────
@@ -391,6 +436,70 @@ function registrarHandlers(bot) {
         if (currentAreaKey) mostrarSubmenu(chatId, currentAreaKey);
         else mostrarMenuPrincipal(chatId);
       }
+    }
+  });
+
+  function enviarConfirmacion(idChat, dataEstado) {
+    const contactLine = dataEstado.asesora ? `\n📞 *Contacto:* ${dataEstado.asesora}` : '';
+    
+    // Mejorar la visualización de la evidencia
+    let evidenciaLine = '';
+    if (dataEstado.isAudio) {
+      evidenciaLine = '\n📁 *Evidencia:* 🎙️ Nota de voz';
+    } else if (dataEstado.imagen) {
+      evidenciaLine = '\n📁 *Evidencia:* 🖼️ Foto adjunta';
+    }
+
+    const categoriaLine = dataEstado.subCategoria ? `\n🛠️ *Categoría:* ${dataEstado.subCategoria}` : '';
+
+    bot.sendMessage(idChat,
+      `📋 *Resumen de tu Requerimiento*\n\n*Área:* ${dataEstado.area}${categoriaLine}\n*Punto:* ${dataEstado.punto || 'No detectado'}\n*Descripción:* ${dataEstado.falla}${contactLine}${evidenciaLine}\n\n¿Deseas enviar este ticket a la mesa de ayuda?`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '✅ Confirmar y Enviar', callback_data: 'confirmar_si' }],
+            [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Descripción', callback_data: 'editar_falla' }],
+            [{ text: '✏️ Editar Contacto', callback_data: 'editar_asesora' }, { text: '🖼️ Añadir/Cambiar Foto', callback_data: 'editar_imagen' }],
+            [{ text: '❌ Cancelar', callback_data: 'confirmar_no' }],
+          ]
+        }
+      }
+    );
+  }
+
+  bot.on('voice', async (msg) => {
+    const chatId = msg.chat.id;
+    try {
+      bot.sendChatAction(chatId, 'upload_voice');
+      bot.sendMessage(chatId, '🎙️ *Procesando tu audio con IA...* un momento.', { parse_mode: 'Markdown' });
+
+      // 1. Obtener el enlace del archivo de Telegram
+      const fileLink = await bot.getFileLink(msg.voice.file_id);
+      
+      // 2. Transcribir audio
+      const textoTranscrito = await aiService.transcribirAudio(fileLink);
+      
+      // 3. Analizar intención
+      const info = await aiService.analizarIntencion(textoTranscrito);
+
+      users[chatId] = {
+        area: info.area || 'Soporte TI',
+        areaKey: 'soporte_ti',
+        subCategoria: info.subCategoria,
+        punto: info.punto || '',
+        falla: info.falla,
+        asesora: '',
+        imagen: null,
+        paso: 'esperando_imagen'
+      };
+
+      bot.sendMessage(chatId, `✅ *Transcripción exitosa:* \n\n_"${textoTranscrito}"_`);
+      return bot.sendMessage(chatId, '📸 *Ahora, por favor envía una FOTO como evidencia* para completar tu reporte.', { parse_mode: 'Markdown' });
+
+    } catch (error) {
+      console.error('Error procesando audio:', error);
+      bot.sendMessage(chatId, '⚠️ No pude procesar tu audio. Por favor intenta escribiendo el problema o intenta de nuevo.');
     }
   });
 

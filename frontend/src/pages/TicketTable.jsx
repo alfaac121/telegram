@@ -59,7 +59,7 @@ export default function TicketTable({ user }) {
             <tr>
               <th className="px-6 py-3 border-b border-slate-200">ID</th>
               <th className="px-6 py-3 border-b border-slate-200">Área</th>
-              <th className="px-6 py-3 border-b border-slate-200">Usuario ID</th>
+              <th className="px-6 py-3 border-b border-slate-200">Usuario</th>
               <th className="px-6 py-3 border-b border-slate-200">Punto</th>
               <th className="px-6 py-3 border-b border-slate-200">Falla</th>
               <th className="px-6 py-3 border-b border-slate-200">Asesora</th>
@@ -82,7 +82,7 @@ export default function TicketTable({ user }) {
                     {r.area || 'Soporte TI'}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-slate-500">{r.user_id}</td>
+                <td className="px-6 py-4 text-slate-500">{r.nombre || 'Desconocido'}</td>
                 <td className="px-6 py-4 text-slate-700">{r.punto || '-'}</td>
                 <td className="px-6 py-4 text-slate-600 truncate max-w-xs">{r.falla}</td>
                 <td className="px-6 py-4 text-slate-600">

@@ -2,11 +2,18 @@
 const db = require('../config/db');
 
 exports.obtenerTodos = async (rol, username) => {
+  let query = `
+    SELECT r.*, c.nombre 
+    FROM reportes r
+    LEFT JOIN clientes_telegram c ON r.user_id = c.telegram_id
+  `;
+  
   if (rol === 'tecnico') {
-    const [rows] = await db.query('SELECT * FROM reportes WHERE tecnico = ? ORDER BY fecha DESC', [username]);
+    const [rows] = await db.query(`${query} WHERE r.tecnico = ? ORDER BY r.fecha DESC`, [username]);
     return rows;
   }
-  const [rows] = await db.query('SELECT * FROM reportes ORDER BY fecha DESC');
+  
+  const [rows] = await db.query(`${query} ORDER BY r.fecha DESC`);
   return rows;
 };
 

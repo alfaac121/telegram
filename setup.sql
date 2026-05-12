@@ -3,7 +3,7 @@ USE telegram_bot;
 
 CREATE TABLE IF NOT EXISTS clientes_telegram (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    telegram_id BIGINT,
+    telegram_id BIGINT UNIQUE,
     nombre VARCHAR(100),
     punto VARCHAR(50),
     descripcion TEXT,
