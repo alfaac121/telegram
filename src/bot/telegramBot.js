@@ -45,23 +45,32 @@ function registrarHandlers(bot) {
     
     let opciones = [];
     if (areaKey === 'soporte_ti') {
-      opciones = [
-        [{ text: '🛑 Reportar falla', callback_data: 'accion_reportar' }],
-        [{ text: '🔍 Consultar estado', callback_data: 'accion_estado' }],
-        [{ text: '⬅️ Volver', callback_data: 'volver_principal' }]
-      ];
+      bot.sendMessage(chatId, `💻 *Centro de Soporte TI*\n\nHas seleccionado Soporte Técnico. Por favor, elige la categoría que mejor describa tu inconveniente para brindarte una solución más rápida:`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🔐 Problemas de Acceso', callback_data: 'ti_cat_acceso' }],
+            [{ text: '💻 Fallas en Equipos', callback_data: 'ti_cat_equipos' }],
+            [{ text: '🚀 Software y Aplicaciones', callback_data: 'ti_cat_software' }],
+            [{ text: '🌐 Red e Internet', callback_data: 'ti_cat_red' }],
+            [{ text: '📋 Solicitudes y Servicios', callback_data: 'ti_cat_servicios' }],
+            [{ text: '🔍 Consultar un Ticket', callback_data: 'accion_estado' }],
+            [{ text: '⬅️ Volver al Menú Principal', callback_data: 'volver_principal' }]
+          ]
+        }
+      });
+      return;
     } else {
       opciones = [
         [{ text: '📝 Registrar solicitud', callback_data: 'accion_reportar' }],
         [{ text: '🔍 Consultar estado', callback_data: 'accion_estado' }],
         [{ text: '⬅️ Volver', callback_data: 'volver_principal' }]
       ];
+      bot.sendMessage(chatId, `📍 Has seleccionado: *${areaNombre}*\n¿Qué deseas hacer?`, {
+        parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: opciones }
+      });
     }
-
-    bot.sendMessage(chatId, `📍 Has seleccionado: *${areaNombre}*\n¿Qué deseas hacer?`, {
-      parse_mode: 'Markdown',
-      reply_markup: { inline_keyboard: opciones }
-    });
   }
 
   bot.onText(/\/start/, (msg) => {
@@ -88,6 +97,114 @@ function registrarHandlers(bot) {
       return;
     }
 
+    // --- FLUJOS ESPECÍFICOS DE TI ---
+
+    if (data === 'ti_cat_acceso') {
+      users[chatId].categoria = 'Problemas de Acceso';
+      bot.sendMessage(chatId, `🔐 *Problemas de Acceso*\n\n¿En qué sistema o plataforma presentas el inconveniente?`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📧 Correo Corporativo', callback_data: 'ti_sub_acceso_correo' }],
+            [{ text: '📂 Sistema Interno (SIIS)', callback_data: 'ti_sub_acceso_siis' }],
+            [{ text: '🔑 VPN / Escritorio Remoto', callback_data: 'ti_sub_acceso_vpn' }],
+            [{ text: '❓ Otro / No listado', callback_data: 'ti_sub_acceso_otro' }],
+            [{ text: '⬅️ Volver', callback_data: 'area_soporte_ti' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    if (data === 'ti_cat_equipos') {
+      users[chatId].categoria = 'Fallas en Equipos';
+      bot.sendMessage(chatId, `💻 *Fallas en Equipos*\n\nSelecciona el tipo de hardware afectado:`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🖥️ Laptop / Computador', callback_data: 'ti_sub_equipo_pc' }],
+            [{ text: '🖨️ Impresora / Escáner', callback_data: 'ti_sub_equipo_print' }],
+            [{ text: '☎️ Teléfono IP / Diadema', callback_data: 'ti_sub_equipo_tel' }],
+            [{ text: '⬅️ Volver', callback_data: 'area_soporte_ti' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    if (data === 'ti_cat_software') {
+      users[chatId].categoria = 'Software y Aplicaciones';
+      bot.sendMessage(chatId, `🚀 *Software y Aplicaciones*\n\n¿Con qué software necesitas asistencia?`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '📦 Office 365 / Teams', callback_data: 'ti_sub_soft_office' }],
+            [{ text: '🛡️ Antivirus / Seguridad', callback_data: 'ti_sub_soft_security' }],
+            [{ text: '📊 Aplicativos de Negocio', callback_data: 'ti_sub_soft_business' }],
+            [{ text: '⬅️ Volver', callback_data: 'area_soporte_ti' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    if (data === 'ti_cat_red') {
+      users[chatId].categoria = 'Red e Internet';
+      bot.sendMessage(chatId, `🌐 *Red e Internet*\n\n¿Qué tipo de problema de conexión presentas?`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '❌ Sin acceso a Internet', callback_data: 'ti_sub_red_no_net' }],
+            [{ text: '🐢 Lentitud en la navegación', callback_data: 'ti_sub_red_slow' }],
+            [{ text: '📡 Falla en señal Wi-Fi', callback_data: 'ti_sub_red_wifi' }],
+            [{ text: '⬅️ Volver', callback_data: 'area_soporte_ti' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    if (data === 'ti_cat_servicios') {
+      users[chatId].categoria = 'Solicitudes y Servicios';
+      bot.sendMessage(chatId, `📋 *Solicitudes y Servicios*\n\n¿Qué trámite o servicio requieres?`, {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: '🆕 Solicitud de Hardware', callback_data: 'ti_sub_serv_hard' }],
+            [{ text: '📂 Permisos de Carpetas', callback_data: 'ti_sub_serv_perm' }],
+            [{ text: '📥 Instalación de Software', callback_data: 'ti_sub_serv_inst' }],
+            [{ text: '⬅️ Volver', callback_data: 'area_soporte_ti' }]
+          ]
+        }
+      });
+      return;
+    }
+
+    // --- HANDLER DE SELECCIÓN FINAL DE SUB-CATEGORÍA ---
+    if (data.startsWith('ti_sub_')) {
+      const subMapping = {
+        acceso_correo: 'Acceso a Correo', acceso_siis: 'Acceso a SIIS', acceso_vpn: 'Acceso a VPN', acceso_otro: 'Acceso Otros',
+        equipo_pc: 'Falla en PC', equipo_print: 'Falla en Impresora', equipo_tel: 'Falla en Telefonía',
+        soft_office: 'Soporte Office', soft_security: 'Soporte Seguridad', soft_business: 'Soporte Aplicativos',
+        red_no_net: 'Sin Internet', red_slow: 'Lentitud de Red', red_wifi: 'Falla de Wi-Fi',
+        serv_hard: 'Pedido de Hardware', serv_perm: 'Permisos de Acceso', serv_inst: 'Instalación de Software'
+      };
+      const subKey = data.replace('ti_sub_', '');
+      const subNombre = subMapping[subKey] || 'General';
+      
+      users[chatId].subCategoria = subNombre;
+      users[chatId].paso = 'esperando_punto';
+      users[chatId].punto = '';
+      users[chatId].falla = '';
+      users[chatId].asesora = '';
+      users[chatId].imagen = null;
+
+      bot.sendMessage(chatId, `✅ Has seleccionado: *${subNombre}*\n\nPara generar tu ticket oficial, por favor indica el *Punto de venta o Sucursal* desde donde reportas:`, { parse_mode: 'Markdown' });
+      return;
+    }
+
+    // --- ACCIONES GENERALES ---
+
     if (data === 'accion_reportar') {
       const area = users[chatId]?.area || 'Soporte TI';
       users[chatId] = { ...users[chatId], paso: 'esperando_punto', punto: '', falla: '', asesora: '', imagen: null };
@@ -104,6 +221,9 @@ function registrarHandlers(bot) {
     if (data === 'confirmar_si') {
       const estado = users[chatId];
       if (!estado || estado.paso !== 'confirmando') return;
+      
+      const fullFalla = estado.subCategoria ? `[${estado.subCategoria}] - ${estado.falla}` : estado.falla;
+      
       try {
         const res = await fetch(`${API_URL}/reportes`, {
           method: 'POST',
@@ -112,14 +232,14 @@ function registrarHandlers(bot) {
             user_id: chatId,
             area: estado.area,
             punto: estado.punto,
-            falla: estado.falla,
+            falla: fullFalla,
             asesora: estado.asesora || null,
             imagen: estado.imagen || null
           })
         });
         const result = await res.json();
         if (!res.ok) throw new Error('Error de API');
-        bot.sendMessage(chatId, `✅ Registro guardado correctamente en *${estado.area}*\n\n🎫 Tu ticket es: #${result.id}\n\nConsérvalo para futuras consultas.`, {
+        bot.sendMessage(chatId, `✅ *Ticket TI Generado*\n\nSe ha registrado tu solicitud en el área de *${estado.area}*.\n\n🎫 *Número de Ticket:* #${result.id}\n📍 *Sucursal:* ${estado.punto}\n🛠️ *Categoría:* ${estado.subCategoria || 'General'}\n\nNuestro equipo técnico atenderá tu requerimiento a la brevedad.`, {
           parse_mode: 'Markdown',
           reply_markup: { 
             inline_keyboard: [
@@ -171,22 +291,27 @@ function registrarHandlers(bot) {
     if (estado.paso === 'esperando_punto') {
       estado.punto = texto;
       estado.paso = 'esperando_falla';
-      const label = estado.area === 'Soporte TI' ? 'la falla' : 'tu solicitud';
-      return bot.sendMessage(chatId, `Describe detalladamente ${label}:`);
+      let msj = '';
+      if (estado.areaKey === 'soporte_ti') {
+        msj = `Entendido. Ahora, describe detalladamente el inconveniente con *${estado.subCategoria || 'el servicio'}*:`;
+      } else {
+        msj = `Describe detalladamente tu solicitud para *${estado.area}*:`;
+      }
+      return bot.sendMessage(chatId, msj, { parse_mode: 'Markdown' });
     }
 
     if (estado.paso === 'esperando_falla') {
       if (foto) return bot.sendMessage(chatId, '⚠️ Por favor describe la situación con texto.');
       estado.falla = texto;
       estado.paso = 'esperando_asesora';
-      return bot.sendMessage(chatId, '📞 ¿Cuál es tu número de contacto? (o escribe "omitir")');
+      return bot.sendMessage(chatId, '📞 ¿A qué número podemos contactarte para el seguimiento? (o escribe "omitir")');
     }
 
     if (estado.paso === 'esperando_asesora') {
       if (foto) return bot.sendMessage(chatId, '⚠️ Por favor escribe el número o "omitir".');
       estado.asesora = texto.toLowerCase() === 'omitir' ? '' : texto;
       estado.paso = 'esperando_imagen';
-      return bot.sendMessage(chatId, "📎 Puedes enviar una imagen como evidencia (opcional) o escribe 'omitir'");
+      return bot.sendMessage(chatId, "📎 Si tienes una imagen o captura del error, envíala ahora (opcional), de lo contrario escribe 'omitir':");
     }
 
     if (estado.paso === 'esperando_imagen') {
@@ -216,18 +341,18 @@ function registrarHandlers(bot) {
     // ── Confirmación visual ──────────────────────────────────────
 
     function enviarConfirmacion(idChat, dataEstado) {
-      const contactLine = dataEstado.asesora ? `\n📞 Contacto: ${dataEstado.asesora}` : '';
+      const contactLine = dataEstado.asesora ? `\n📞 *Contacto:* ${dataEstado.asesora}` : '';
       const tieneImg = dataEstado.imagen ? '\n🖼️ [Evidencia adjunta]' : '';
-      const label = dataEstado.area === 'Soporte TI' ? 'Falla' : 'Solicitud';
+      const categoriaLine = dataEstado.subCategoria ? `\n🛠️ *Categoría:* ${dataEstado.subCategoria}` : '';
 
       bot.sendMessage(idChat,
-        `📋 *Confirmación de Solicitud*\n\n*Área:* ${dataEstado.area}\n*Punto:* ${dataEstado.punto}\n*${label}:* ${dataEstado.falla}${contactLine}${tieneImg}\n\n¿La información es correcta?`,
+        `📋 *Resumen de tu Requerimiento*\n\n*Área:* ${dataEstado.area}${categoriaLine}\n*Punto:* ${dataEstado.punto}\n*Descripción:* ${dataEstado.falla}${contactLine}${tieneImg}\n\n¿Deseas enviar este ticket a la mesa de ayuda?`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
-              [{ text: '✅ Sí, enviar', callback_data: 'confirmar_si' }],
-              [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Contenido', callback_data: 'editar_falla' }],
+              [{ text: '✅ Confirmar y Enviar', callback_data: 'confirmar_si' }],
+              [{ text: '✏️ Editar Punto', callback_data: 'editar_punto' }, { text: '✏️ Editar Descripción', callback_data: 'editar_falla' }],
               [{ text: '✏️ Editar Contacto', callback_data: 'editar_asesora' }, { text: '✏️ Editar Imagen', callback_data: 'editar_imagen' }],
               [{ text: '❌ Cancelar', callback_data: 'confirmar_no' }],
             ]
