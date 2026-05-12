@@ -102,7 +102,6 @@ export default function ExternalModule({ name, url }) {
           onLoad={handleLoad}
           onError={handleError}
           title={name}
-          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
           className={`w-full h-full border-0 transition-opacity duration-500 ${estado === 'ok' ? 'opacity-100' : 'opacity-0 pointer-events-none absolute inset-0'}`}
         />
       </div>

@@ -2,18 +2,27 @@
 import { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import API_URL from '../api';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({ totalReportes: 0, pendientes: 0, resueltos: 0, enProceso: 0, totalUsuarios: 0 });
+  const [stats, setStats] = useState({ totalReportes: 0, pendientes: 0, resueltos: 0, enProceso: 0, totalUsuarios: 0, tecnicos: [] });
+  const [tecnicoSel, setTecnicoSel] = useState('todos');
   const cardsRef = useRef([]);
-  
-  useEffect(() => {
-    fetch('http://localhost:3000/api/reportes/stats', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+
+  const fetchStats = () => {
+    const url = `${API_URL}/reportes/stats${tecnicoSel !== 'todos' ? `?tecnico=${tecnicoSel}` : ''}`;
+    fetch(url, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
       .then(r => r.json())
       .then(setStats)
       .catch(console.error);
+  };
 
-    gsap.fromTo(cardsRef.current, 
+  useEffect(() => {
+    fetchStats();
+  }, [tecnicoSel]);
+
+  useEffect(() => {
+    gsap.fromTo(cardsRef.current,
       { y: 30, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, ease: 'power2.out' }
     );
@@ -26,7 +35,6 @@ export default function Dashboard() {
     </div>
   );
 
-  // Siempre 3 segmentos visibles: usamos 0.01 como minimo para que Recharts pinte el arco incluso con valor 0
   const chartData = [
     { name: 'Pendientes', value: Math.max(stats.pendientes, 0.01), real: stats.pendientes, color: '#f59e0b' },
     { name: 'En Proceso', value: Math.max(stats.enProceso,  0.01), real: stats.enProceso,  color: '#3b82f6' },
@@ -35,9 +43,24 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Resumen Estadístico</h1>
-        <p className="text-slate-500">Métricas en tiempo real del sistema</p>
+      <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Resumen Estadístico</h1>
+          <p className="text-slate-500">Métricas en tiempo real del sistema</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+          <span className="text-slate-500 text-sm font-medium ml-2">Filtro por Técnico:</span>
+          <select 
+            value={tecnicoSel} 
+            onChange={(e) => setTecnicoSel(e.target.value)}
+            className="bg-slate-50 border-none text-slate-700 text-sm font-semibold rounded-md focus:ring-0 cursor-pointer pr-8"
+          >
+            <option value="todos">🌍 Todos los técnicos</option>
+            {stats.tecnicos && stats.tecnicos.map(t => (
+              <option key={t} value={t}>👨‍🔧 {t}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
@@ -47,7 +70,7 @@ export default function Dashboard() {
         <Card idx={3} title="Resueltos"       value={stats.resueltos}     color="text-emerald-500" />
         <Card idx={4} title="Usuarios Vivos"  value={stats.totalUsuarios} color="text-indigo-500"  />
       </div>
-      
+
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Estado de los Tickets</h2>

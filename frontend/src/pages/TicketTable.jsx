@@ -58,9 +58,11 @@ export default function TicketTable({ user }) {
           <thead className="bg-slate-50 text-slate-600 font-medium">
             <tr>
               <th className="px-6 py-3 border-b border-slate-200">ID</th>
+              <th className="px-6 py-3 border-b border-slate-200">Área</th>
               <th className="px-6 py-3 border-b border-slate-200">Usuario ID</th>
               <th className="px-6 py-3 border-b border-slate-200">Punto</th>
               <th className="px-6 py-3 border-b border-slate-200">Falla</th>
+              <th className="px-6 py-3 border-b border-slate-200">Asesora</th>
               <th className="px-6 py-3 border-b border-slate-200">Evidencia</th>
               <th className="px-6 py-3 border-b border-slate-200">Técnico</th>
               <th className="px-6 py-3 border-b border-slate-200">Estado</th>
@@ -70,22 +72,38 @@ export default function TicketTable({ user }) {
             {reportes.map(r => (
               <tr key={r.id} className="hover:bg-slate-50/50 transition-colors">
                 <td className="px-6 py-4 font-semibold text-slate-700">#{r.id}</td>
+                <td className="px-6 py-4">
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
+                    r.area === 'Soporte TI' ? 'bg-blue-100 text-blue-700' :
+                    r.area === 'Comercial' ? 'bg-emerald-100 text-emerald-700' :
+                    r.area === 'Talento Humano' ? 'bg-purple-100 text-purple-700' :
+                    'bg-slate-100 text-slate-700'
+                  }`}>
+                    {r.area || 'Soporte TI'}
+                  </span>
+                </td>
                 <td className="px-6 py-4 text-slate-500">{r.user_id}</td>
                 <td className="px-6 py-4 text-slate-700">{r.punto || '-'}</td>
                 <td className="px-6 py-4 text-slate-600 truncate max-w-xs">{r.falla}</td>
+                <td className="px-6 py-4 text-slate-600">
+                  {r.asesora
+                    ? <a href={`tel:${r.asesora.replace(/\s/g,'')}`} className="font-medium text-emerald-600 hover:underline">📞 {r.asesora}</a>
+                    : <span className="text-slate-400">-</span>}
+                </td>
                 <td className="px-6 py-4">
                   {r.imagen ? <a href={`${API_URL}/reportes/${r.id}/imagen?token=${token}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Ver Foto</a> : <span className="text-slate-400">N/A</span>}
                 </td>
                 <td className="px-6 py-4 text-slate-700">
-                   {puedeEditar && user?.rol === 'admin' ? (
-                     <input 
-                       type="text" 
-                       defaultValue={r.tecnico || ''} 
-                       onBlur={(e) => { if(e.target.value !== r.tecnico) handleUpdate(r.id, 'tecnico', e.target.value) }}
-                       className="border border-slate-300 rounded px-2 py-1 w-32 focus:outline-none focus:border-blue-500"
-                       placeholder="Asignar..."
-                     />
-                   ) : (
+                     {puedeEditar && user?.rol === 'admin' ? (
+                      <input 
+                        type="text" 
+                        defaultValue={r.tecnico || ''} 
+                        onBlur={(e) => { if(e.target.value !== (r.tecnico || '')) handleUpdate(r.id, 'tecnico', e.target.value) }}
+                        onKeyDown={(e) => { if(e.key === 'Enter') { e.target.blur(); } }}
+                        className="border border-slate-300 rounded px-2 py-1 w-32 focus:outline-none focus:border-blue-500"
+                        placeholder="Asignar..."
+                      />
+                    ) : (
                      r.tecnico || 'Sin asignar'
                    )}
                 </td>
@@ -110,7 +128,7 @@ export default function TicketTable({ user }) {
             ))}
             {reportes.length === 0 && (
               <tr>
-                <td colSpan="7" className="px-6 py-8 text-center text-slate-500">No hay tickets disponibles.</td>
+                <td colSpan="9" className="px-6 py-8 text-center text-slate-500">No hay tickets disponibles.</td>
               </tr>
             )}
           </tbody>

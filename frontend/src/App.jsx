@@ -46,10 +46,12 @@ export default function App() {
 
         <Route path="/" element={<ProtectedRoute user={user}><Dashboard /></ProtectedRoute>} />
         <Route path="/soporte/tickets"      element={<ProtectedRoute user={user}><TicketTable user={user} /></ProtectedRoute>} />
-        <Route path="/soporte/manageengine" element={<ProtectedRoute user={user}><ExternalModule name="ManageEngine"  url="https://www.manageengine.com" /></ProtectedRoute>} />
+        <Route path="/soporte/manageengine" element={<ProtectedRoute user={user}><ExternalModule name="ManageEngine"  url="http://10.98.98.30:8443/WorkOrder.do" /></ProtectedRoute>} />
 
         <Route path="/operaciones/bnet"    element={<ProtectedRoute user={user}><ExternalModule name="BNET"      url="http://bnet.tuempresa.local" /></ProtectedRoute>} />
-        <Route path="/operaciones/sims"    element={<ProtectedRoute user={user}><ExternalModule name="SIMS"      url="http://sims.tuempresa.local" /></ProtectedRoute>} />
+        <Route path="/operaciones/siis"    element={<ProtectedRoute user={user}><ExternalModule name="SIIS"      url="http://172.20.1.33:8082/Login2/index.jsf" /></ProtectedRoute>} />
+        <Route path="/operaciones/bet-bogota" element={<ProtectedRoute user={user}><ExternalModule name="Bet Bogotá" url="http://bet-bogota.tuempresa.local" /></ProtectedRoute>} />
+        <Route path="/operaciones/benet-yumbo" element={<ProtectedRoute user={user}><ExternalModule name="Benet Yumbo" url="http://benet-yumbo.tuempresa.local" /></ProtectedRoute>} />
         <Route path="/personal/traslados"  element={<ProtectedRoute user={user}><ExternalModule name="Traslados" url="http://traslados.tuempresa.local" /></ProtectedRoute>} />
         <Route path="/personal/sis"        element={<ProtectedRoute user={user}><ExternalModule name="SIS"       url="http://sis.tuempresa.local" /></ProtectedRoute>} />
 

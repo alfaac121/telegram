@@ -37,7 +37,8 @@ exports.putReporte = async (req, res) => {
 
 exports.getStats = async (req, res) => {
    try {
-     const stats = await reportesService.obtenerStats();
+     const { tecnico } = req.query;
+     const stats = await reportesService.obtenerStats(tecnico);
      res.json(stats);
    } catch(e){
      res.status(500).json({error: 'Error'});

@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS reportes (
     falla TEXT,
     estado VARCHAR(20) DEFAULT 'pendiente',
     tecnico VARCHAR(100) DEFAULT NULL,
+    asesora VARCHAR(100) DEFAULT NULL,
     imagen VARCHAR(255) DEFAULT NULL,
     fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,6 +42,14 @@ CREATE TABLE IF NOT EXISTS permisos (
     FOREIGN KEY(id_usuario) REFERENCES usuarios(id) ON DELETE CASCADE,
     FOREIGN KEY(id_modulo) REFERENCES modulos(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS configuracion (
+    clave VARCHAR(100) PRIMARY KEY,
+    valor TEXT
+);
+
+-- Config por defecto --
+INSERT IGNORE INTO configuracion (clave, valor) VALUES ('telefono_asesora', '');
 
 -- Modulos Default Seed --
 INSERT IGNORE INTO modulos (nombre) VALUES 

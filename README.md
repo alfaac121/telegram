@@ -1,236 +1,242 @@
-# 🤖 Telegram Support Bot & Admin Panel
+# 🤖 Telegram Bot — Hub Central de Soporte
 
-Bienvenido al repositorio del **Bot de Soporte Técnico para Telegram**. Este sistema permite gestionar reportes de fallas de usuarios finales a través de Telegram y administrarlos mediante un panel web profesional.
-
----
-
-## 🚀 Guía de Arranque Rápido (Dos Terminales)
-
-Copia y pega estos comandos en orden para tener el sistema funcionando en 1 minuto:
-
-### terminal 1: Backend & Bot
-```bash
-cd telegram-bot
-npm install
-sudo mysql < setup.sql  # (Solo la primera vez)
-npm start
-```
-
-### terminal 2: Panel Web
-```bash
-cd telegram-bot/frontend
-npm install
-npm run dev
-```
-*Abrir: http://localhost:5173*
+Sistema integral de gestión de tickets de soporte técnico con bot de Telegram y portal web administrativo.
 
 ---
 
-## 🆘 ¿Algo salió mal? (Soluciones rápidas)
+## 🏗️ Stack Tecnológico
 
-Si al ejecutar los comandos anteriores te sale un error, prueba esto según el mensaje:
-
-*   **Si dice `ECONNREFUSED`**: Significa que MySQL está apagado.
-    ```bash
-    sudo service mysql start
-    ```
-*   **Si dice `Access denied for user 'root'`**: Corre este comando para liberar el acceso (estándar de desarrollo):
-    ```bash
-    sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
-    ```
-*   **Si no puedes entrar al Panel Web (Error de login)**: Resetea el administrador maestro:
-    ```bash
-    node fix_admin.js
-    ```
+| Capa | Tecnología |
+|---|---|
+| **Backend** | Node.js + Express |
+| **Base de Datos** | MySQL 8.0 (Docker) |
+| **Frontend** | React + Vite + TailwindCSS |
+| **Bot** | node-telegram-bot-api |
+| **Auth** | bcrypt + JWT |
+| **Infra** | Docker Compose |
 
 ---
 
-## 🛠️ Manual de Construcción Desde Cero (Pasos Reales)
+## 🚀 Levantar el sistema
 
-Si quieres replicar este proyecto en una computadora limpia o entender cómo se construyó de principio a fin, sigue este orden:
-
-### Paso 1: Entorno de Desarrollo
-Antes de tocar el código, debes tener:
-1. **Node.js**: Descárgalo de [nodejs.org](https://nodejs.org/). Verifícalo con `node -v`.
-2. **Servidor MySQL**: Instala [XAMPP](https://www.apachefriends.org/) y activa el módulo **MySQL**.
-3. **Editor**: Se recomienda [VS Code](https://code.visualstudio.com/).
-
-### Paso 2: Inicialización de la Carpeta y Proyecto
-Crea la carpeta y el archivo de configuración base:
 ```bash
-# Crear carpeta y entrar
-mkdir telegram-bot
-cd telegram-bot
+# Clonar el repositorio
+git clone <repo-url>
+cd telegram
 
-# Inicializar proyecto de Node
-npm init -y
+# Levantar todos los servicios
+docker compose up -d
+
+# Crear usuario admin (primera vez)
+docker exec telegram_bot_app node fix_admin.js
 ```
 
-### Paso 3: Instalación de la "Columna Vertebral" (Dependencias)
-Ejecuta este comando para instalar todas las herramientas necesarias:
-```bash
-npm install express cors node-telegram-bot-api mysql2 jsonwebtoken bcryptjs node-fetch@2
+### Servicios disponibles
+
+| Servicio | URL |
+|---|---|
+| **Hub Central (Frontend)** | http://localhost:5173 |
+| **API Backend** | http://localhost:3000 |
+| **MySQL** | localhost:3306 (interno) |
+
+### Credenciales por defecto
+
+| Campo | Valor |
+|---|---|
+| Email | `admin@admin.com` |
+| Password | `123456` |
+
+---
+
+## 📁 Estructura del proyecto
+
+```
+telegram/
+├── server.js                  # Punto de entrada del backend
+├── setup.sql                  # Schema inicial de la base de datos
+├── fix_admin.js               # Script para crear/resetear usuario admin
+├── docker-compose.yml
+├── Dockerfile
+│
+├── src/
+│   ├── bot/
+│   │   └── telegramBot.js     # Handlers del bot de Telegram
+│   ├── config/
+│   │   ├── db.js              # Pool de conexión MySQL (promise)
+│   │   └── env.js             # Variables de entorno
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── botController.js
+│   │   ├── configController.js
+│   │   ├── reportesController.js
+│   │   └── usuariosController.js
+│   ├── middlewares/
+│   │   ├── authMiddleware.js  # Verificación JWT
+│   │   └── roleMiddleware.js  # Control de roles
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── botRoutes.js
+│   │   ├── configRoutes.js
+│   │   ├── reportesRoutes.js
+│   │   └── usuariosRoutes.js
+│   └── services/
+│       ├── authService.js
+│       ├── configService.js
+│       ├── reportesService.js
+│       └── usuariosService.js
+│
+└── frontend/
+    └── src/
+        ├── pages/
+        │   ├── Dashboard.jsx   # Estadísticas en tiempo real
+        │   ├── TicketTable.jsx # Gestión de tickets
+        │   └── Login.jsx
+        └── components/
+            ├── Sidebar.jsx
+            └── ExternalModule.jsx  # Wrapper para sistemas externos (iframe)
 ```
 
-### Paso 4: Creación de la Estructura de Archivos
-Debes crear las carpetas organizadamente para que el código sea escalable:
-```bash
-mkdir -p src/bot src/config src/controllers src/middlewares src/routes src/services frontend
-```
+---
 
-### Paso 5: Implementación de la Base de Datos
-Crea un archivo llamado `setup.sql` y pega el código de creación de tablas. Luego, en tu terminal de MySQL o PHPMyAdmin ejecuta:
+## 🗄️ Esquema de Base de Datos
+
 ```sql
-CREATE DATABASE telegram_bot;
-USE telegram_bot;
--- (Aquí pegas las tablas de reportes, usuarios, etc.)
-```
+-- Usuarios del portal web
+usuarios (id, username, email, password, rol)
+  rol: 'admin' | 'tecnico' | 'supervisor'
 
-### Paso 6: Configuración del Bot de Telegram
-1. Habla con [@BotFather](https://t.me/botfather) en Telegram.
-2. Crea un bot nuevo con `/newbot`.
-3. Copia el **HTTP API Token**.
-4. Pégalo en tu archivo `server.js`.
+-- Clientes que usan el bot de Telegram
+clientes_telegram (id, telegram_id, nombre, punto, descripcion, fecha_registro)
 
-### Paso 7: Ejecución
-Para encender el sistema completo:
-```bash
-npm start
-```
+-- Tickets de soporte generados desde el bot
+reportes (id, user_id, punto, falla, estado, tecnico, asesora, imagen, fecha)
+  estado: 'pendiente' | 'en_proceso' | 'resuelto'
 
----
+-- Módulos del sistema
+modulos (id, nombre)
 
-## 💻 Código Explicado Profundamente
+-- Permisos por usuario
+permisos (id_usuario, id_modulo)
 
-### 1. El Servidor Maestro (`server.js`)
-Este archivo une el mundo web con el mundo de Telegram:
-```javascript
-const app = express();
-// ... configuración de rutas API ...
-const bot = new TelegramBot(TOKEN, { polling: true }); // Enciende el bot
-registrarHandlers(bot); // Carga la lógica de conversación
-app.listen(PORT, () => console.log("Servidor Online"));
-```
-
-### 2. Lógica de Conversación (`src/bot/telegramBot.js`)
-Aquí es donde el bot decide qué responder. Usamos un sistema de **Pasos** para que el bot no se confunda entre el nombre del cliente y la falla técnica:
-
-```javascript
-// Ejemplo de transición de estados
-if (estado.paso === 'esperando_punto') {
-    estado.punto = texto; // Guardamos el lugar de la falla
-    estado.paso = 'esperando_falla'; // Pasamos a la siguiente pregunta
-    bot.sendMessage(chatId, '¿Qué falla presenta el equipo?');
-}
-```
-
-### 3. Control de Acceso por Roles (RBAC) en Backend
-La lógica de negocio asegura que los Técnicos solo vean sus tickets asignados mientras que los Admins ven todo:
-
-```javascript
-// Fragmento de src/services/reportesService.js
-exports.obtenerTodos = async (rol, username) => {
-  if (rol === 'tecnico') {
-    // El técnico solo consulta sus propios tickets
-    const [rows] = await db.query('SELECT * FROM reportes WHERE tecnico = ? ORDER BY fecha DESC', [username]);
-    return rows;
-  }
-  // Los demás (Admin/Supervisor) ven la lista global
-  const [rows] = await db.query('SELECT * FROM reportes ORDER BY fecha DESC');
-  return rows;
-};
+-- Configuración dinámica del sistema
+configuracion (clave, valor)
 ```
 
 ---
 
-## 🛠️ Guía Paso a Paso (Tutorial de Configuración)
+## 🤖 Flujo del Bot de Telegram
 
-Sigue estos pasos según tu situación actual:
+```
+/start
+  └─► 🛑 Reportar falla
+        ├─► ¿Cuál es el punto?
+        ├─► Describe la falla
+        ├─► 📞 ¿Número de la asesora? (o "omitir")
+        ├─► 📎 Imagen de evidencia (o "omitir")
+        ├─► 📋 Confirmación con opciones de edición
+        └─► ✅ Ticket guardado con número de ID
 
-### Escenario A: Si estás instalando desde CERO (Primera vez)
-1. **Clonar el repositorio:**
-   ```bash
-   git clone https://github.com/alfaac121/telegram-bot.git
-   cd telegram-bot
-   ```
-2. **Instalar Backend:**
-   ```bash
-   npm install
-   ```
-3. **Instalar Frontend (Opcional si vas a compilar):**
-   ```bash
-   cd frontend && npm install && cd ..
-   ```
-4. **Configurar Base de Datos:**
-   - Abre XAMPP o MySQL.
-   - Ejecuta los comandos en `setup.sql` para crear las tablas.
-5. **Configurar el Bot:**
-   - Edita `server.js` y coloca tu Token.
-6. **Lanzar:**
-   ```bash
-   npm start
-   ```
-
-### Escenario B: Si ya tienes el código y quieres ACTUALIZARLO
-1. **Bajar cambios de GitHub:**
-   ```bash
-   git pull origin main
-   ```
-2. **Reiniciar el servidor:**
-   - Presiona `CTRL + C` en la terminal.
-   - Escribe `npm start`.
-
-### Escenario C: Si necesitas REINICIAR los datos (Limpiar todo)
-1. **Entrar a MySQL y borrar base de datos:**
-   ```sql
-   DROP DATABASE telegram_bot;
-   ```
-2. **Recargar el script de tablas:**
-   - Ejecuta de nuevo `setup.sql`.
-3. **Iniciar servidor:**
-   - El sistema creará automáticamente el usuario `admin@admin.com` al detectar que la tabla de usuarios está vacía.
+/estado → Consultar estado de un ticket por ID
+/reportar → Iniciar reporte directamente
+```
 
 ---
 
-## ⭐ Funcionalidades Destacadas
+## 🖥️ Hub Central — Portal Web
 
-1.  **Evidencia con Fotos**: Los usuarios pueden enviar fotos de la falla. El bot captura el `file_id` y lo asocia al ticket para que el administrador lo vea en el panel.
-2.  **Seguridad por ID**: Solo el usuario que creó el ticket puede consultar su estado mediante `/estado`.
-3.  **Roles Administrativos**:
-    - **Admin**: Control total y gestión de usuarios.
-    - **Técnico**: Gestiona sus tareas asignadas y cambia estados.
-    - **Supervisor**: Vista de solo lectura para auditoría y métricas.
+### Módulos disponibles
+
+| Ruta | Descripción | Roles |
+|---|---|---|
+| `/` | Dashboard con estadísticas y gráfica | Todos |
+| `/soporte/tickets` | Tabla de tickets con gestión | Admin, Técnico |
+| `/soporte/manageengine` | Integración ManageEngine ServiceDesk | Todos |
+| `/operaciones/bnet` | Sistema BNET | Todos |
+| `/operaciones/siis` | Sistema SIIS | Todos |
+| `/operaciones/bet-bogota` | Sistema Bet Bogotá | Todos |
+| `/operaciones/benet-yumbo` | Sistema Benet Yumbo | Todos |
+| `/personal/traslados` | Módulo de traslados | Todos |
+| `/personal/sis` | Sistema SIS | Todos |
+
+### Gestión de tickets
+
+- **Admin**: puede asignar técnico (campo editable con Enter o clic fuera), cambiar estado, ver todos los tickets
+- **Técnico**: ve solo sus tickets asignados, puede cambiar estado
+- **Supervisor**: solo lectura
+
+---
+
+## 🔧 Correcciones y Mejoras Realizadas
+
+### 🐛 Bug crítico — Error 500 en login (resuelto)
+
+**Causa**: `db.js` exportaba `pool.promise()` directamente, pero todos los servicios hacían `require('../config/db').promise`, accediendo a una propiedad inexistente (`undefined`). Cualquier llamada a `db.query()` lanzaba un `TypeError` capturado como error 500.
+
+**Archivos corregidos**:
+- `src/services/authService.js`
+- `src/services/reportesService.js`
+- `src/services/usuariosService.js`
+- `src/controllers/botController.js`
+- `fix_admin.js` (también usaba `bcryptjs` en lugar de `bcrypt`)
+
+### ✅ Campo "Asesora" en reportes
+
+- El bot ahora pide el número de teléfono de la asesora como paso del flujo de reporte
+- El campo es editable en la pantalla de confirmación
+- Se guarda en la columna `asesora` de la tabla `reportes`
+- El Hub Central muestra el número en la tabla de tickets como enlace `tel:` clickeable
+
+### ✅ Técnico — guardar con Enter
+
+- El campo de asignación de técnico en la tabla de tickets ahora guarda tanto al presionar **Enter** como al hacer clic fuera del campo
+
+### ✅ Integración ManageEngine
+
+- URL configurada: `http://10.98.98.30:8443/WorkOrder.do`
+- Carga embebida en iframe dentro del Hub Central
+- Fallback automático con botón "Abrir en pestaña" si el sistema bloquea el embed
+- Atributo `sandbox` removido para permitir carga completa de estilos y scripts
+
+### ✅ Infraestructura Docker
+
+- Corrección de `fix_admin.js` para ejecutarse correctamente dentro del contenedor
+- `setup.sql` actualizado con columna `asesora` y tabla `configuracion`
 
 ---
 
-## 🛠️ Solución de Problemas Comunes
+## 🔐 Variables de entorno
 
-### 1. Error `ECONNREFUSED 3306` (Base de datos apagada)
-Si el bot no arranca porque no encuentra la base de datos:
-```bash
-# Iniciar MySQL en Linux
-sudo service mysql start
-```
+Configuradas en `docker-compose.yml`:
 
-### 2. Error `Access denied for user 'root'...'` (Permisos)
-Si te dice que el usuario `root` no tiene acceso o requiere contraseña, ejecuta este comando para dejarlo libre (estándar de desarrollo):
-```bash
-sudo mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY ''; FLUSH PRIVILEGES;"
+```env
+DB_HOST=db
+DB_USER=root
+DB_PASSWORD=rootpassword
+DB_NAME=telegram_bot
+JWT_SECRET=secreto-seguro-telegram-bot
+PORT=3000
 ```
-
-### 3. Error `Unknown database 'telegram_bot'`
-Si la base de datos no existe, créala e importa las tablas así:
-```bash
-sudo mysql < setup.sql
-```
-
-### 4. Olvido de contraseña del Panel Web
-Si no puedes entrar al panel web con `admin@admin.com / 123456`, ejecuta el fix de usuario:
-```bash
-node fix_admin.js
-```
-*(Este comando ya viene incluido en la raíz y resetea al administrador maestro).*
 
 ---
-*Instalación simplificada para máxima velocidad de despliegue.*
-# telegram
+
+## 📌 Comandos útiles
+
+```bash
+# Apagar todos los servicios
+docker compose down
+
+# Levantar servicios
+docker compose up -d
+
+# Ver logs del backend
+docker logs telegram_bot_app --tail 50
+
+# Ver logs del frontend
+docker logs telegram_bot_frontend --tail 50
+
+# Resetear usuario admin
+docker exec telegram_bot_app node fix_admin.js
+
+# Acceder a MySQL
+docker exec -it telegram_bot_db mysql -uroot -prootpassword telegram_bot
+```
